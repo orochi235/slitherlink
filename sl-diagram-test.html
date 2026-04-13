@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>sl-diagram Component Test</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 32px; background: #f4f5f7; color: #1a1a2e; }
+  h1 { color: #1a1a6e; }
+  h2 { color: #1a1a6e; font-size: 1.1em; margin-top: 0; }
+  .test { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+          display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .test h2 { grid-column: 1 / -1; }
+  .test > p { grid-column: 1 / -1; margin: 0; color: #555; font-size: .9em; }
+  .test code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: .85em; }
+  .test .demo { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .test .source { background: #f8f8fa; border-radius: 8px; padding: 14px; overflow-x: auto; font-size: .78em; border: 1px solid #e8e8ec; align-self: start; }
+  .test .source pre { margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; line-height: 1.5; color: #333; }
+  .test.full { grid-template-columns: 1fr; }
+  .test.full .source { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<h1>sl-diagram Web Component Tests</h1>
+
+<!-- ── Basic grid ── -->
+<div class="test">
+  <h2>Basic grid with clues</h2>
+  <p>A 3×3 grid with some clue numbers. All edges undetermined.</p>
+  <div class="demo">
+    <sl-diagram
+      size="3x3"
+      clues="1,1:3 2,1:2 3,1:1 1,2:2 2,2:0 3,2:3 1,3:1 2,3:2 3,3:2"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="3x3"
+  clues="1,1:3 2,1:2 3,1:1 1,2:2 2,2:0 3,2:3 1,3:1 2,3:2 3,3:2"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Lines ── -->
+<div class="test">
+  <h2>Active lines (loop edges)</h2>
+  <p>A complete loop around a 2×2 grid.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:2 2,1:2 1,2:2 2,2:2"
+      lines="0,0->RRDDLLU"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:2 2,1:2 1,2:2 2,2:2"
+  lines="0,0->RRDDLLU"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Eliminated edges (gaps) ── -->
+<div class="test">
+  <h2>Eliminated edges — gaps (default)</h2>
+  <p>Eliminated edges are removed, leaving gaps in the grid.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:1 2,2:1"
+      crosses="0,0->RD; 2,0->D; 0,2->R; 1,1->RD"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:1 2,2:1"
+  crosses="0,0->RD; 2,0->D; 0,2->R; 1,1->RD"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── X-marks ── -->
+<div class="test">
+  <h2>Explicit X markers</h2>
+  <p>Red ✕ markers via <code>x-marks</code> attribute. Edges are removed from the grid and marked.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:1 2,2:1"
+      x-marks="0,0->RD; 2,0->D; 0,2->R; 1,1->RD"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:1 2,2:1"
+  x-marks="0,0->RD; 2,0->D; 0,2->R; 1,1->RD"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Emphasis ── -->
+<div class="test">
+  <h2>Emphasized (forced) edges</h2>
+  <p>Goldenrod edges with matching endpoint dots, drawn on top of everything.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:3 2,2:3"
+      emphasis="0,0->R; 0,0->D; 1,2->R; 2,1->D"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:3 2,2:3"
+  emphasis="0,0->R; 0,0->D; 1,2->R; 2,1->D"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Lines + emphasis combined ── -->
+<div class="test">
+  <h2>Lines + emphasis combined</h2>
+  <p>Active loop in black, forced deductions in goldenrod.</p>
+  <div class="demo">
+    <sl-diagram
+      size="3x3"
+      clues="1,1:3 2,1:2 3,1:3"
+      lines="0,0->RRR; 0,0->D; 3,0->D"
+      emphasis="0,1->R; 2,1->R"
+      continue="bottom"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="3x3"
+  clues="1,1:3 2,1:2 3,1:3"
+  lines="0,0->RRR; 0,0->D; 3,0->D"
+  emphasis="0,1->R; 2,1->R"
+  continue="bottom"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Captions ── -->
+<div class="test">
+  <h2>Captions</h2>
+  <p>Per-diagram captions via the <code>caption</code> attribute.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2" clues="1,1:3"
+      continue="none"
+      caption="Before"
+    ></sl-diagram>
+    <sl-diagram
+      size="2x2" clues="1,1:3"
+      lines="0,0->RD"
+      emphasis="1,0->D; 0,1->R"
+      continue="none"
+      caption="After"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2" clues="1,1:3"
+  continue="none"
+  caption="Before"
+&gt;&lt;/sl-diagram&gt;
+
+&lt;sl-diagram
+  size="2x2" clues="1,1:3"
+  lines="0,0->RD"
+  emphasis="1,0->D; 0,1->R"
+  continue="none"
+  caption="After"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Sequence ── -->
+<div class="test full">
+  <h2>Sequence (sl-sequence)</h2>
+  <p>Multiple diagrams with arrow separators and synced extents.</p>
+  <div class="demo">
+    <sl-sequence>
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,2:3"
+        continue="none"
+        caption="Given"
+      ></sl-diagram>
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,2:3"
+        emphasis="0,0->R; 0,0->D; 1,2->R; 2,1->D"
+        continue="none"
+        caption="Forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+  <div class="source"><pre>&lt;sl-sequence&gt;
+  &lt;sl-diagram
+    size="2x2" clues="1,1:3 2,2:3"
+    continue="none" caption="Given"
+  &gt;&lt;/sl-diagram&gt;
+  &lt;sl-diagram
+    size="2x2" clues="1,1:3 2,2:3"
+    emphasis="0,0->R; 0,0->D; 1,2->R; 2,1->D"
+    continue="none" caption="Forced"
+  &gt;&lt;/sl-diagram&gt;
+&lt;/sl-sequence&gt;</pre></div>
+</div>
+
+<!-- ── Fade: all sides ── -->
+<div class="test">
+  <h2>Fade — all sides</h2>
+  <p>Default <code>continue="all"</code> fades on every side.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:3 2,2:1"
+      lines="0,0->RD"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:3 2,2:1"
+  lines="0,0->RD"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── Fade: selective ── -->
+<div class="test">
+  <h2>Fade — selective sides</h2>
+  <p><code>continue="right bottom"</code> fades only right and bottom.</p>
+  <div class="demo">
+    <sl-diagram
+      size="2x2"
+      clues="1,1:3 2,2:1"
+      lines="0,0->RD"
+      continue="right bottom"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="2x2"
+  clues="1,1:3 2,2:1"
+  lines="0,0->RD"
+  continue="right bottom"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<!-- ── CSS custom properties ── -->
+<div class="test">
+  <h2>CSS custom properties</h2>
+  <p>Resized with <code>--sl-cell-size: 72</code> and custom colors.</p>
+  <div class="demo">
+    <div style="--sl-cell-size: 72; --sl-emphasis: #e03030; --sl-grid: #d8d8d8; --sl-clue: #333;">
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,1:1"
+        lines="0,0->RR"
+        emphasis="0,0->D"
+        continue="none"
+      ></sl-diagram>
+    </div>
+  </div>
+  <div class="source"><pre>&lt;div style="--sl-cell-size: 72;
+     --sl-emphasis: #e03030;
+     --sl-grid: #d8d8d8;
+     --sl-clue: #333;"&gt;
+  &lt;sl-diagram
+    size="2x2" clues="1,1:3 2,1:1"
+    lines="0,0->RR"
+    emphasis="0,0->D"
+    continue="none"
+  &gt;&lt;/sl-diagram&gt;
+&lt;/div&gt;</pre></div>
+</div>
+
+<!-- ── Multiple segments ── -->
+<div class="test">
+  <h2>Multiple path segments</h2>
+  <p>Disconnected path segments separated by semicolons.</p>
+  <div class="demo">
+    <sl-diagram
+      size="3x3"
+      clues="1,1:2 3,3:2"
+      lines="0,0->RD; 2,2->RD"
+      continue="none"
+    ></sl-diagram>
+  </div>
+  <div class="source"><pre>&lt;sl-diagram
+  size="3x3"
+  clues="1,1:2 3,3:2"
+  lines="0,0->RD; 2,2->RD"
+  continue="none"
+&gt;&lt;/sl-diagram&gt;</pre></div>
+</div>
+
+<script src="sl-diagram.js"></script>
+</body>
+</html>

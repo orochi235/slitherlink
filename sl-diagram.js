@@ -1,6 +1,6 @@
 class SLDiagram extends HTMLElement {
   static get observedAttributes() {
-    return ['size', 'clues', 'lines', 'crosses', 'emphasis', 'caption', 'show-crosses', 'continue', 'extents', 'baseline'];
+    return ['size', 'clues', 'lines', 'crosses', 'emphasis', 'putative', 'x-marks', 'caption', 'continue', 'extents', 'baseline'];
   }
 
   constructor() {
@@ -94,13 +94,13 @@ class SLDiagram extends HTMLElement {
       line: cssVar('--sl-line', '#000'),
       emphasis: cssVar('--sl-emphasis', '#daa520'),
       grid: cssVar('--sl-grid', '#e0e0e0'),
-      dot: cssVar('--sl-dot', '#666'),
-      clue: cssVar('--sl-clue', '#1a1a6e'),
+      dot: cssVar('--sl-dot', '#000'),
+      clue: cssVar('--sl-clue', '#000'),
+      putative: cssVar('--sl-putative', '#c0f'),
       cross: cssVar('--sl-cross', '#c00'),
       caption: cssVar('--sl-caption', '#666'),
     };
 
-    const showCrosses = this.hasAttribute('show-crosses');
     const stubSides = SLDiagram.parseStubs(this.getAttribute('continue'));
     const captionText = this.getAttribute('caption') || '';
 
@@ -110,6 +110,8 @@ class SLDiagram extends HTMLElement {
     const lineEdges = new Set(SLDiagram.parsePaths(this.getAttribute('lines')));
     const crossEdges = new Set(SLDiagram.parsePaths(this.getAttribute('crosses')));
     const emphasisEdges = new Set(SLDiagram.parsePaths(this.getAttribute('emphasis')));
+    const putativeEdges = new Set(SLDiagram.parsePaths(this.getAttribute('putative')));
+    const xMarkEdges = new Set(SLDiagram.parsePaths(this.getAttribute('x-marks')));
 
     // Determine grid dimensions from size attribute, clues, or edge data
     let gridW = 0, gridH = 0;
@@ -126,7 +128,7 @@ class SLDiagram extends HTMLElement {
     }
 
     // Expand from edges
-    const allEdgeSets = [lineEdges, crossEdges, emphasisEdges];
+    const allEdgeSets = [lineEdges, crossEdges, emphasisEdges, putativeEdges, xMarkEdges];
     for (const edgeSet of allEdgeSets) {
       for (const ek of edgeSet) {
         const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
@@ -174,14 +176,29 @@ class SLDiagram extends HTMLElement {
     const contentCols = maxVX - minVX;
     const contentRows = maxVY - minVY;
     const HC = C / 2;
-    const PAD = HC;
+    const PAD = C;
 
-    const svgW = PAD * 2 + (eMaxVX - eMinVX) * C;
-    const svgH = PAD * 2 + (eMaxVY - eMinVY) * C;
+    // Content pixel dimensions (centered in SVG)
+    const contentW = contentCols * C;
+    const contentH = contentRows * C;
 
-    // Map vertex to pixel
-    const vx = (gx) => PAD + (gx - eMinVX) * C;
-    const vy = (gy) => PAD + (gy - eMinVY) * C;
+    // Fade extensions — allocate symmetrically so content stays centered
+    const fadeX = (fadeSides.has('left') || fadeSides.has('right')) ? C : 0;
+    const fadeY = (fadeSides.has('top') || fadeSides.has('bottom')) ? C : 0;
+
+    // Total SVG: fade space is symmetric; non-fade sides get padding instead
+    const spaceL = fadeX > 0 ? fadeX : PAD;
+    const spaceR = fadeX > 0 ? fadeX : PAD;
+    const spaceT = fadeY > 0 ? fadeY : PAD;
+    const spaceB = fadeY > 0 ? fadeY : PAD;
+    const svgW = spaceL + contentW + spaceR;
+    const svgH = spaceT + contentH + spaceB;
+
+    // Map vertex to pixel — content always centered
+    const contentOriginX = spaceL;
+    const contentOriginY = spaceT;
+    const vx = (gx) => contentOriginX + (gx - minVX) * C;
+    const vy = (gy) => contentOriginY + (gy - minVY) * C;
 
     // Build all possible edges
     const allGridEdges = [];
@@ -196,24 +213,60 @@ class SLDiagram extends HTMLElement {
 
     // Layer 1: Undetermined edges
     for (const ek of allGridEdges) {
-      if (lineEdges.has(ek) || emphasisEdges.has(ek)) continue;
-      if (crossEdges.has(ek)) {
-        if (!showCrosses) continue; // gap mode: skip eliminated edges
-      }
+      if (lineEdges.has(ek) || emphasisEdges.has(ek) || putativeEdges.has(ek) || xMarkEdges.has(ek)) continue;
+      if (crossEdges.has(ek)) continue; // gap: skip eliminated edges
       const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
       svg += `<line x1="${vx(x1)}" y1="${vy(y1)}" x2="${vx(x2)}" y2="${vy(y2)}" stroke="${COL.grid}" stroke-width="${LINE_W}" stroke-linecap="round"/>`;
     }
 
-    // Layer 2: Cross markers (if show-crosses)
-    if (showCrosses) {
-      for (const ek of crossEdges) {
-        const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
-        const mx = (vx(x1) + vx(x2)) / 2;
-        const my = (vy(y1) + vy(y2)) / 2;
-        const r = C * 0.12;
-        svg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
-        svg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
+    // Layer 1b: Puzzle border on non-fade sides (outside the grid)
+    const borderW = Math.round(LINE_W * 0.7);
+    const borderGap = Math.round(C * 0.7);
+    const bLeft = vx(minVX) - borderGap, bRight = vx(maxVX) + borderGap;
+    const bTop = vy(minVY) - borderGap, bBottom = vy(maxVY) + borderGap;
+    const borderCol = '#999';
+    const fT = fadeSides.has('top'), fB = fadeSides.has('bottom'), fL = fadeSides.has('left'), fR = fadeSides.has('right');
+    const bw2 = borderW / 2;
+    const buid = 'slb' + Math.random().toString(36).slice(2, 9);
+    let borderIdx = 0;
+    let borderSvg = '';
+    let borderDefs = '';
+    const borderLine = (x1, y1, x2, y2, fadeStart, fadeEnd, horiz) => {
+      let stroke = borderCol;
+      if (fadeStart || fadeEnd) {
+        const gid = `${buid}${borderIdx++}`;
+        const s1 = fadeStart ? 'rgba(153,153,153,0)' : borderCol;
+        const s2 = fadeStart ? borderCol : borderCol;
+        const s3 = fadeEnd ? 'rgba(153,153,153,0)' : borderCol;
+        const fadeLen = HC;
+        if (horiz) {
+          const total = x2 - x1;
+          const f1 = fadeStart ? fadeLen / total : 0;
+          const f2 = fadeEnd ? 1 - fadeLen / total : 1;
+          borderDefs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${s1}"/><stop offset="${f1}" stop-color="${s2}"/><stop offset="${f2}" stop-color="${borderCol}"/><stop offset="1" stop-color="${s3}"/></linearGradient>`;
+        } else {
+          const total = y2 - y1;
+          const f1 = fadeStart ? fadeLen / total : 0;
+          const f2 = fadeEnd ? 1 - fadeLen / total : 1;
+          borderDefs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${s1}"/><stop offset="${f1}" stop-color="${s2}"/><stop offset="${f2}" stop-color="${borderCol}"/><stop offset="1" stop-color="${s3}"/></linearGradient>`;
+        }
+        stroke = `url(#${gid})`;
       }
+      borderSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${borderW}" stroke-linecap="butt"/>`;
+    };
+    if (!fT) borderLine(bLeft - (!fL ? bw2 : 0), bTop, bRight + (!fR ? bw2 : 0), bTop, fL, fR, true);
+    if (!fB) borderLine(bLeft - (!fL ? bw2 : 0), bBottom, bRight + (!fR ? bw2 : 0), bBottom, fL, fR, true);
+    if (!fL) borderLine(bLeft, bTop - (!fT ? bw2 : 0), bLeft, bBottom + (!fB ? bw2 : 0), fT, fB, false);
+    if (!fR) borderLine(bRight, bTop - (!fT ? bw2 : 0), bRight, bBottom + (!fB ? bw2 : 0), fT, fB, false);
+
+    // Layer 2: X-mark markers
+    for (const ek of xMarkEdges) {
+      const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
+      const mx = (vx(x1) + vx(x2)) / 2;
+      const my = (vy(y1) + vy(y2)) / 2;
+      const r = C * 0.12;
+      svg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
+      svg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
     }
 
     // Layer 3: Vertex dots
@@ -223,19 +276,55 @@ class SLDiagram extends HTMLElement {
       }
     }
 
-    // Layer 4: Active edges (lines)
+    // Layer 4: Putative edges (dashed, magenta) — below active lines
+    for (const ek of putativeEdges) {
+      const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
+      const dash = Math.round(C * 0.12);
+      const gap = Math.round(C * 0.10);
+      svg += `<line x1="${vx(x1)}" y1="${vy(y1)}" x2="${vx(x2)}" y2="${vy(y2)}" stroke="${COL.putative}" stroke-width="${LINE_W}" stroke-linecap="butt" stroke-dasharray="${dash} ${gap}"/>`;
+    }
+
+    // Layer 5: Putative endpoint dots (open circle)
+    if (putativeEdges.size > 0) {
+      const putVerts = new Set();
+      for (const ek of putativeEdges) {
+        const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
+        putVerts.add(`${x1},${y1}`);
+        putVerts.add(`${x2},${y2}`);
+      }
+      for (const v of putVerts) {
+        const [x, y] = v.split(',').map(Number);
+        svg += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R}" fill="white" stroke="${COL.putative}" stroke-width="2"/>`;
+      }
+    }
+
+    // Layer 6: Active edges (lines)
     for (const ek of lineEdges) {
       const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
       svg += `<line x1="${vx(x1)}" y1="${vy(y1)}" x2="${vx(x2)}" y2="${vy(y2)}" stroke="${COL.line}" stroke-width="${LINE_W}" stroke-linecap="round"/>`;
     }
 
-    // Layer 5: Emphasized edges
+    // Layer 6b: Active endpoint dots
+    if (lineEdges.size > 0) {
+      const lineVerts = new Set();
+      for (const ek of lineEdges) {
+        const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
+        lineVerts.add(`${x1},${y1}`);
+        lineVerts.add(`${x2},${y2}`);
+      }
+      for (const v of lineVerts) {
+        const [x, y] = v.split(',').map(Number);
+        svg += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R}" fill="${COL.line}"/>`;
+      }
+    }
+
+    // Layer 7: Emphasized edges
     for (const ek of emphasisEdges) {
       const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
       svg += `<line x1="${vx(x1)}" y1="${vy(y1)}" x2="${vx(x2)}" y2="${vy(y2)}" stroke="${COL.emphasis}" stroke-width="${LINE_W}" stroke-linecap="round"/>`;
     }
 
-    // Layer 6: Emphasized endpoint dots
+    // Layer 8: Emphasized endpoint dots
     if (emphasisEdges.size > 0) {
       const emphVerts = new Set();
       for (const ek of emphasisEdges) {
@@ -249,14 +338,14 @@ class SLDiagram extends HTMLElement {
       }
     }
 
-    // Layer 7: Clue numbers
+    // Layer 9: Clue numbers
     const fontSize = Math.round(C * 0.625);
     for (const [coord, val] of clueMap) {
       const [cx, cy] = coord.split(',').map(Number);
       // Cell center: between vertices (cx-1,cy-1) and (cx,cy)
       const px = (vx(cx - 1) + vx(cx)) / 2;
       const py = (vy(cy - 1) + vy(cy)) / 2;
-      svg += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${fontSize}" font-weight="700" fill="${COL.clue}">${val}</text>`;
+      svg += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${fontSize}" font-weight="600" fill="${COL.clue}">${val}</text>`;
     }
 
     // Fade mask
@@ -264,10 +353,10 @@ class SLDiagram extends HTMLElement {
     let body = svg;
     if (fadeSides.size > 0) {
       const uid = 'slfm' + Math.random().toString(36).slice(2, 9);
-      const innerLeft = vx(minVX);
-      const innerRight = vx(maxVX);
-      const innerTop = vy(minVY);
-      const innerBottom = vy(maxVY);
+      const innerLeft = contentOriginX;
+      const innerRight = contentOriginX + contentW;
+      const innerTop = contentOriginY;
+      const innerBottom = contentOriginY + contentH;
       const fadeLen = HC; // half cell of fade strip
 
       const fT = fadeSides.has('top');
@@ -284,35 +373,36 @@ class SLDiagram extends HTMLElement {
       if (fL) maskRects += `<rect x="0" y="0" width="${innerLeft - fadeLen}" height="${svgH}" fill="black"/>`;
       if (fR) maskRects += `<rect x="${innerRight + fadeLen}" y="0" width="${svgW - (innerRight + fadeLen)}" height="${svgH}" fill="black"/>`;
 
-      // Fade across the full strip, fully transparent at the outer edge
+      // Fade: small fully-visible margin outside content, then aggressive fade
+      const margin = 0.25; // fraction of fadeLen that stays fully visible
       if (fT) {
         const x0 = fL ? innerLeft : innerLeft - fadeLen;
         const x1 = fR ? innerRight : innerRight + fadeLen;
-        gradients += `<linearGradient id="${uid}t" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
+        gradients += `<linearGradient id="${uid}t" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="white"/><stop offset="${margin}" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
         maskRects += `<rect x="${x0}" y="${innerTop - fadeLen}" width="${x1 - x0}" height="${fadeLen}" fill="url(#${uid}t)"/>`;
       }
       if (fB) {
         const x0 = fL ? innerLeft : innerLeft - fadeLen;
         const x1 = fR ? innerRight : innerRight + fadeLen;
-        gradients += `<linearGradient id="${uid}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
+        gradients += `<linearGradient id="${uid}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="white"/><stop offset="${margin}" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
         maskRects += `<rect x="${x0}" y="${innerBottom}" width="${x1 - x0}" height="${fadeLen}" fill="url(#${uid}b)"/>`;
       }
       if (fL) {
         const y0 = fT ? innerTop : innerTop - fadeLen;
         const y1 = fB ? innerBottom : innerBottom + fadeLen;
-        gradients += `<linearGradient id="${uid}l" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
+        gradients += `<linearGradient id="${uid}l" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="white"/><stop offset="${margin}" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
         maskRects += `<rect x="${innerLeft - fadeLen}" y="${y0}" width="${fadeLen}" height="${y1 - y0}" fill="url(#${uid}l)"/>`;
       }
       if (fR) {
         const y0 = fT ? innerTop : innerTop - fadeLen;
         const y1 = fB ? innerBottom : innerBottom + fadeLen;
-        gradients += `<linearGradient id="${uid}r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
+        gradients += `<linearGradient id="${uid}r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="white"/><stop offset="${margin}" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>`;
         maskRects += `<rect x="${innerRight}" y="${y0}" width="${fadeLen}" height="${y1 - y0}" fill="url(#${uid}r)"/>`;
       }
 
       // Corner pieces
       const corner = (id, ccx, ccy, rx, ry) => {
-        gradients += `<radialGradient id="${id}" cx="${ccx}" cy="${ccy}" r="${fadeLen}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></radialGradient>`;
+        gradients += `<radialGradient id="${id}" cx="${ccx}" cy="${ccy}" r="${fadeLen}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="white"/><stop offset="${margin}" stop-color="white"/><stop offset="1" stop-color="black"/></radialGradient>`;
         maskRects += `<rect x="${rx}" y="${ry}" width="${fadeLen}" height="${fadeLen}" fill="url(#${id})"/>`;
       };
       if (fT && fL) corner(`${uid}tl`, innerLeft, innerTop, innerLeft - fadeLen, innerTop - fadeLen);
@@ -320,9 +410,13 @@ class SLDiagram extends HTMLElement {
       if (fB && fL) corner(`${uid}bl`, innerLeft, innerBottom, innerLeft - fadeLen, innerBottom);
       if (fB && fR) corner(`${uid}br`, innerRight, innerBottom, innerRight, innerBottom);
 
-      defsContent = `<defs>${gradients}<mask id="${uid}m" maskUnits="userSpaceOnUse">${maskRects}</mask></defs>`;
-      body = `<g mask="url(#${uid}m)">${svg}</g>`;
+      defsContent = `<defs>${gradients}${borderDefs}<mask id="${uid}m" maskUnits="userSpaceOnUse">${maskRects}</mask></defs>`;
+      body = `<g mask="url(#${uid}m)">${svg}</g>${borderSvg}`;
     }
+    if (!defsContent && borderDefs) {
+      defsContent = `<defs>${borderDefs}</defs>`;
+    }
+    if (!fadeSides.size) body += borderSvg;
 
     const fullSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">${defsContent}${body}</svg>`;
 
@@ -385,7 +479,7 @@ class SLSequence extends HTMLElement {
         maxW = Math.max(maxW, x);
         maxH = Math.max(maxH, y);
       }
-      for (const attr of ['lines', 'crosses', 'emphasis']) {
+      for (const attr of ['lines', 'crosses', 'emphasis', 'putative', 'x-marks']) {
         const edges = SLDiagram.parsePaths(d.getAttribute(attr));
         for (const ek of edges) {
           const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
