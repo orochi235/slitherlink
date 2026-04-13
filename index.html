@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Slitherlink Solving Lemmas</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 980px; margin: 0 auto; padding: 32px 24px; background: #f4f5f7; color: #1a1a2e; line-height: 1.6; counter-reset: lemma-counter; }
+  h1 { font-size: 2em; border-bottom: 4px solid #1a1a6e; padding-bottom: 10px; margin-bottom: 6px; color: #1a1a6e; }
+  .subtitle { color: #555; font-size: .95em; margin-bottom: 32px; }
+
+  .rules { background: #1a1a6e; color: white; border-radius: 10px; padding: 18px 22px; margin-bottom: 36px; font-size: .93em; }
+  .rules a { color: inherit; }
+  .rules h2 { margin: 0 0 10px; font-size: 1.1em; }
+  .rules li { margin: 4px 0; }
+
+  .lemma { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-bottom: 28px; counter-increment: lemma-counter; }
+  .lemma-text { background: white; border-radius: 10px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-left: 5px solid #1a1a6e; }
+  .lemma-text > :last-child { margin-bottom: 0; }
+  .lemma-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .lemma-num { font-size: .75em; font-weight: 700; background: #1a1a6e; color: white; padding: 2px 9px; border-radius: 4px; letter-spacing: .5px; white-space: nowrap; }
+  .lemma h2 { margin: 0; font-size: 1.15em; color: #1a1a6e; position: relative; top: 2px; }
+  .lemma p { margin: 0 0 14px; }
+  .corollary { font-size: .9em; color: #444; background: #f0f4ff; border-left: 3px solid #7090cc; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 14px; }
+
+  .diagrams { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; align-self: center; justify-content: center; margin: 0; }
+
+  details.axioms { margin-bottom: 28px; background: #eef0f4; border-radius: 10px; padding: 18px 22px; }
+  details.axioms > summary { font-size: 1.1em; font-weight: 700; color: #1a1a6e; cursor: pointer; padding: 8px 0; }
+  details.axioms > summary::marker { color: #1a1a6e; }
+  .axiom { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-bottom: 16px; }
+  .axiom-text { background: white; border-radius: 10px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-left: 5px solid #999; }
+  .axiom-text > :last-child { margin-bottom: 0; }
+  .axiom-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .axiom-num { font-size: .75em; font-weight: 700; background: #888; color: white; padding: 2px 9px; border-radius: 4px; letter-spacing: .5px; white-space: nowrap; }
+  .axiom h2 { margin: 0; font-size: 1.15em; color: #666; }
+  .axiom p { margin: 0 0 14px; }
+
+  .heuristic { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-bottom: 28px; }
+  .heuristic-text { background: white; border-radius: 10px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-left: 5px solid #f0b429; }
+  .heuristic-text > :last-child { margin-bottom: 0; }
+  .heuristic-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .heuristic-num { font-size: .75em; font-weight: 700; background: #f0b429; color: white; padding: 2px 9px; border-radius: 4px; letter-spacing: .5px; white-space: nowrap; }
+  .heuristic h2 { margin: 0; font-size: 1.15em; color: #b07d0a; position: relative; top: 2px; }
+  .heuristic p { margin: 0 0 14px; }
+  .section-header { font-size: 1.4em; color: #b07d0a; border-bottom: 3px solid #f0b429; padding-bottom: 8px; margin: 36px 0 20px; }
+
+  .summary-card { background: white; border-radius: 10px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 28px; }
+  .summary-card h2 { color: #1a1a6e; font-size: 1.2em; margin-top: 0; }
+  .summary-card table { width: 100%; border-collapse: collapse; font-size: .88em; display: table; }
+  .summary-card th { background: #1a1a6e; color: white; padding: 8px 12px; text-align: left; border: none; }
+  .summary-card td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  .summary-card tr:nth-child(even) td { background: #f0f4ff; }
+
+  .stacked { display: flex; flex-direction: column; gap: 6px; }
+
+  .diagrams figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
+  .diagrams figcaption { font-size: .78em; color: #666; font-style: italic; text-align: center; max-width: 180px; }
+
+  @media (max-width: 700px) {
+    body { padding: 16px 12px; }
+    .lemma, .axiom, .heuristic { grid-template-columns: 1fr; }
+    .diagrams { margin-top: 14px; }
+    .summary-card table { font-size: .82em; }
+    .summary-card th, .summary-card td { padding: 5px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Slitherlink Solving Lemmas</h1>
+<p class="subtitle">A structured reference for logical deductions in Slitherlink (スリザーリンク) puzzles</p>
+
+<div class="rules">
+  <h2>Rules of Slitherlink</h2>
+  <ul>
+    <li>The grid is made of <strong>dots</strong> (vertices) connected by potential edges.</li>
+    <li>Draw a <strong>single continuous loop</strong> along the grid edges.</li>
+    <li>The loop <strong>cannot cross or branch</strong> — every vertex on the loop has exactly 2 edges.</li>
+    <li>Cells may contain a <strong>clue number</strong> (0–3) indicating how many of their 4 edges are part of the loop.</li>
+    <li>Cells without a number have <strong>no constraint</strong> on how many edges are used.</li>
+  </ul>
+  <p style="font-size:.9em;margin-top:8px;"><a href="#axiom-1">See axioms below</a> for basic operations.</p>
+</div>
+
+<!-- ═══ LEMMA 1 ═══ -->
+<div class="lemma" id="lemma-1">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 1</span><h2>Corner zero</h2></div>
+  <p>A <strong>0</strong> in a corner cell eliminates all four of its edges. The two edges of the
+     adjacent corner vertex that don't border the 0 cell are then <strong>forced</strong>,
+     since that vertex must have either 0 or 2 loop edges.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="3x3" clues="1,1:0"
+        continue="right bottom"
+        caption="Corner 0"
+      ></sl-diagram>
+      <sl-diagram
+        size="3x3" clues="1,1:0"
+        crosses="0,0->RD"
+        emphasis="1,0->R; 0,1->D"
+        continue="right bottom"
+        caption="Adjacent edges forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 2 ═══ -->
+<div class="lemma" id="lemma-2">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 2</span><h2>Corner three</h2></div>
+  <p>A <strong>3</strong> in a corner cell forces all edges except the one at the outer corner vertex.
+     That vertex has only two edges and both border the 3-cell, but only one can be used — so
+     exactly one of them is in the loop, and the other two edges of the 3 are also <strong>forced</strong>.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="3x3" clues="1,1:3"
+        continue="right bottom"
+        caption="Corner 3"
+      ></sl-diagram>
+      <sl-diagram
+        size="3x3" clues="1,1:3"
+        lines="0,0->R; 0,0->D"
+        emphasis="1,0->D; 0,1->R"
+        continue="right bottom"
+        caption="Two edges immediately forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 3 ═══ -->
+<div class="lemma" id="lemma-3">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 3</span><h2>Row of threes</h2></div>
+  <p>In a row of adjacent <strong>3</strong> cells, every shared edge between them is in the loop,
+     and the two outer edges parallel to the shared edges (top and bottom of the first
+     and last cell) are also <strong>forced</strong>.</p>
+  <div class="corollary">
+    ⟹ This extends to any number of consecutive 3s in a line.
+  </div>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="3x1" clues="1,1:3 2,1:3 3,1:3"
+        continue="all"
+        caption="Three 3s in a row"
+      ></sl-diagram>
+      <sl-diagram
+        size="3x1" clues="1,1:3 2,1:3 3,1:3"
+        emphasis="0,0->D; 1,0->D; 2,0->D; 3,0->D"
+        continue="all"
+        caption="Shared + parallel outer edges forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 4 ═══ -->
+<div class="lemma" id="lemma-4">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 4</span><h2>Diagonal threes</h2></div>
+  <p>Two <strong>3</strong> cells sharing a vertex (diagonally adjacent) force both edges of
+     the shared vertex that <em>don't</em> border either 3-cell, since the shared vertex
+     must have exactly 2 loop edges and both 3-cells demand edges there.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,2:3"
+        continue="none"
+        caption="Diagonal 3s"
+      ></sl-diagram>
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,2:3"
+        emphasis="0,0->R; 0,0->D; 1,2->R; 2,1->D"
+        continue="none"
+        caption="Outer edges at shared vertex forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ AXIOMS ═══ -->
+<details class="axioms" id="axiom-1" open>
+  <summary>Axioms — basic operations</summary>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 1</span><h2>Clue satisfaction</h2></div>
+      <p>If a cell already has N edges in the loop matching its clue N,
+         all remaining edges of that cell are eliminated.</p>
+    </div>
+    <div class="diagrams">
+      <sl-diagram
+        size="1x1" clues="1,1:1"
+        lines="0,0->R"
+        crosses="0,0->D; 1,0->D; 0,1->R"
+        show-crosses
+        continue="none"
+        caption="1-cell with 1 edge → rest eliminated"
+      ></sl-diagram>
+    </div>
+  </div>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 2</span><h2>Remaining forced</h2></div>
+      <p>If a cell with clue N has exactly N undetermined edges remaining
+         (and the rest are eliminated), all remaining edges must be in the loop.</p>
+    </div>
+    <div class="diagrams">
+      <sl-diagram
+        size="1x1" clues="1,1:2"
+        crosses="0,0->R; 0,0->D"
+        emphasis="1,0->D; 0,1->R"
+        show-crosses
+        continue="none"
+        caption="2-cell with 2 left → both forced"
+      ></sl-diagram>
+    </div>
+  </div>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 3</span><h2>Vertex parity</h2></div>
+      <p>Every vertex has 0 or 2 loop edges. If a vertex already has 2 loop edges,
+         all other edges at that vertex are eliminated. If it has 1 loop edge and
+         only 1 undetermined edge remains, that edge is forced.</p>
+    </div>
+    <div class="diagrams">
+      <sl-diagram
+        size="2x1" clues="1,1:2"
+        lines="0,0->RR"
+        crosses="0,0->D; 2,0->D"
+        show-crosses
+        continue="none"
+        caption="Vertex with 2 → others eliminated"
+      ></sl-diagram>
+    </div>
+  </div>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 4</span><h2>Dead end</h2></div>
+      <p>If a vertex has only one undetermined edge and no loop edges,
+         that last edge must be eliminated (a single edge cannot form a loop).</p>
+    </div>
+    <div class="diagrams">
+      <sl-diagram
+        size="2x2" clues="1,1:0"
+        crosses="0,0->RD"
+        continue="right bottom"
+        caption="Corner vertex with 1 edge left → eliminated"
+      ></sl-diagram>
+    </div>
+  </div>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 5</span><h2>No premature closure</h2></div>
+      <p>An edge that would close the loop before all clues are satisfied must be eliminated.
+         The loop must visit enough vertices to satisfy every clue.</p>
+    </div>
+    <div class="diagrams">
+      <sl-diagram
+        size="2x2" clues="1,1:3 2,2:3"
+        lines="0,0->RDRD"
+        continue="none"
+        caption="Can't close here — clues unsatisfied"
+      ></sl-diagram>
+    </div>
+  </div>
+</details>
+
+<!-- ═══ SUMMARY ═══ -->
+<div class="summary-card">
+  <h2>Quick Reference</h2>
+  <table>
+    <tr><th>Lemma</th><th>Pattern</th><th>Result</th></tr>
+    <tr><td>1 — Corner zero</td><td>0 in corner</td><td>Adjacent corner edges forced</td></tr>
+    <tr><td>2 — Corner three</td><td>3 in corner</td><td>Two non-corner edges forced</td></tr>
+    <tr><td>3 — Adjacent threes</td><td>Two 3s sharing an edge</td><td>Shared + all outer edges forced</td></tr>
+    <tr><td>4 — Diagonal threes</td><td>Two 3s sharing a vertex</td><td>Non-bordering edges at shared vertex forced</td></tr>
+  </table>
+</div>
+
+<script src="sl-diagram.js"></script>
+</body>
+</html>
