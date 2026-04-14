@@ -208,6 +208,7 @@ class SLDiagram extends HTMLElement {
         if (y < eMaxVY) allGridEdges.push(SLDiagram.edgeKey(x, y, x, y + 1)); // vertical
       }
     }
+    const allGridEdgeSet = new Set(allGridEdges);
 
     let svg = '';
 
@@ -262,7 +263,15 @@ class SLDiagram extends HTMLElement {
     // Layer 3: Vertex dots
     for (let y = eMinVY; y <= eMaxVY; y++) {
       for (let x = eMinVX; x <= eMaxVX; x++) {
-        svg += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R}" fill="${COL.dot}"/>`;
+        const adj = [
+          SLDiagram.edgeKey(x, y, x + 1, y),
+          SLDiagram.edgeKey(x, y, x - 1, y),
+          SLDiagram.edgeKey(x, y, x, y + 1),
+          SLDiagram.edgeKey(x, y, x, y - 1),
+        ];
+        const allErased = adj.every(ek => crossEdges.has(ek) || !allGridEdgeSet.has(ek));
+        const dotColor = allErased ? COL.grid : COL.dot;
+        svg += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R}" fill="${dotColor}"/>`;
       }
     }
 
