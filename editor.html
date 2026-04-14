@@ -435,11 +435,10 @@ function renderEdge(key, x1, y1, x2, y2, state) {
   }
 
   const edgeCursor = (clickTarget === 'both' || clickTarget === 'lines') ? 'pointer' : 'default';
-  const eHalf = Math.round(CELL * 0.625) / 2;
   if (isHoriz) {
-    edgeSvg += `<rect x="${mx - eHalf}" y="${my - EDGE_HIT}" width="${eHalf * 2}" height="${EDGE_HIT * 2}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
+    edgeSvg += `<rect x="${x1}" y="${my - EDGE_HIT}" width="${x2 - x1}" height="${EDGE_HIT * 2}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
   } else {
-    edgeSvg += `<rect x="${mx - EDGE_HIT}" y="${my - eHalf}" width="${EDGE_HIT * 2}" height="${eHalf * 2}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
+    edgeSvg += `<rect x="${mx - EDGE_HIT}" y="${y1}" width="${EDGE_HIT * 2}" height="${y2 - y1}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
   }
 
   return edgeSvg;
