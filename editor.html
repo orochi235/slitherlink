@@ -119,6 +119,109 @@
     align-items: center;
     gap: 8px;
   }
+
+  .palette {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 10px;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 2px 0 8px rgba(0,0,0,.05);
+    overflow-y: auto;
+  }
+  .palette span.palette-label {
+    font-size: .75em;
+    font-weight: 600;
+    color: #1a1a6e;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 0 4px 4px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2px;
+  }
+  .palette button {
+    padding: 8px 12px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    font-size: .85em;
+    font-weight: 600;
+    cursor: pointer;
+    color: #333;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .palette button:hover { background: #f0f0f4; }
+  .palette button.active { border-color: #1a1a6e; background: #eef; }
+  .palette .swatch {
+    display: inline-block;
+    width: 22px;
+    height: 5px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .palette .swatch-cycle { background: linear-gradient(90deg, #000 0%, #daa520 33%, #c0f 66%, #c00 100%); width: 28px; }
+  .palette .swatch-undetermined { background: #e0e0e0; }
+  .palette .swatch-line { background: #000; }
+  .palette .swatch-emphasis { background: #daa520; }
+  .palette .swatch-putative { background: #c0f; }
+  .palette .swatch-xmark { background: #c00; }
+  .palette .swatch-cross { background: #f4f5f7; border: 1px dashed #ccc; height: 3px; }
+
+  .target-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .target-group span {
+    font-size: .85em;
+    font-weight: 600;
+    color: #1a1a6e;
+  }
+  .target-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .target-toggle button {
+    padding: 4px 10px;
+    border: none;
+    background: white;
+    font-size: .82em;
+    font-weight: 600;
+    cursor: pointer;
+    color: #555;
+    margin-left: 0;
+    border-right: 1px solid #ccc;
+  }
+  .target-toggle button:last-child { border-right: none; }
+  .target-toggle button:hover { background: #f0f0f4; }
+  .target-toggle button.active { background: #1a1a6e; color: white; }
+
+  .zoom-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .zoom-group span {
+    font-size: .85em;
+    font-weight: 600;
+    color: #1a1a6e;
+  }
+  .zoom-group input[type="range"] {
+    width: 80px;
+    cursor: pointer;
+  }
+  .zoom-group .zoom-val {
+    font-size: .78em;
+    color: #555;
+    min-width: 32px;
+  }
 </style>
 </head>
 <body>
@@ -134,10 +237,35 @@
     <label><input type="checkbox" id="cont-left" checked> Left</label>
     <label><input type="checkbox" id="cont-right" checked> Right</label>
   </div>
+  <div class="separator"></div>
+  <div class="target-group">
+    <span>Click:</span>
+    <div class="target-toggle" id="target-toggle">
+      <button data-target="lines">Lines</button>
+      <button class="active" data-target="both">Both</button>
+      <button data-target="cells">Cells</button>
+    </div>
+  </div>
+  <div class="separator"></div>
+  <div class="zoom-group">
+    <span>Zoom:</span>
+    <input type="range" id="zoom" min="24" max="96" value="48" step="4">
+    <span class="zoom-val" id="zoom-val">48</span>
+  </div>
   <button id="copy-btn">Copy</button>
 </div>
 
 <div class="panels">
+  <div class="palette" id="palette">
+    <span class="palette-label">Tool</span>
+    <button class="active" data-tool="cycle"><span class="swatch swatch-cycle"></span>Cycle</button>
+    <button data-tool="undetermined"><span class="swatch swatch-undetermined"></span>Reset</button>
+    <button data-tool="line"><span class="swatch swatch-line"></span>Line</button>
+    <button data-tool="emphasis"><span class="swatch swatch-emphasis"></span>Emphasis</button>
+    <button data-tool="putative"><span class="swatch swatch-putative"></span>Putative</button>
+    <button data-tool="xmark"><span class="swatch swatch-xmark"></span>X-mark</button>
+    <button data-tool="cross"><span class="swatch swatch-cross"></span>Erase</button>
+  </div>
   <div class="grid-panel">
     <svg id="editor-svg"></svg>
   </div>
@@ -151,16 +279,34 @@
 
 <script src="sl-diagram.js"></script>
 <script>
-const CELL = 48;
-const DOT_R = 5;
-const LINE_W = 5;
+const ZOOM_MIN = 24, ZOOM_MAX = 96, ZOOM_STEP = 4;
+const REF_GRID = 12;
+
+function calcDefaultZoom() {
+  const panel = document.querySelector('.grid-panel');
+  const availW = panel.clientWidth - 48;
+  const availH = panel.clientHeight - 48;
+  const avail = Math.min(availW, availH);
+  const ideal = avail / (REF_GRID + 2);
+  const stepped = Math.floor(ideal / ZOOM_STEP) * ZOOM_STEP;
+  return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, stepped));
+}
+
+let CELL = calcDefaultZoom();
+document.getElementById('zoom').value = CELL;
+document.getElementById('zoom-val').textContent = CELL;
+
+function LINE_W() { return Math.max(2, Math.round(CELL * 0.1)); }
+function DOT_R() { return LINE_W(); }
 const EDGE_HIT = 12;
 
 let gridW = 3, gridH = 3;
 let edgeStates = new Map();
 let clueStates = new Map();
 
-const EDGE_TYPES = ['undetermined', 'line', 'emphasis', 'putative', 'xmark'];
+const EDGE_TYPES = ['undetermined', 'line', 'emphasis', 'putative', 'xmark', 'cross'];
+let activeTool = 'cycle';
+let clickTarget = 'both';
 
 function edgeKey(x1, y1, x2, y2) {
   if (x1 < x2 || (x1 === x2 && y1 < y2)) return `${x1},${y1}|${x2},${y2}`;
@@ -204,7 +350,7 @@ function buildSVG() {
 
   for (let y = 0; y <= gridH; y++) {
     for (let x = 0; x <= gridW; x++) {
-      content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R}" fill="#000" style="pointer-events:none;"/>`;
+      content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R()}" fill="#000" style="pointer-events:none;"/>`;
     }
   }
 
@@ -233,20 +379,22 @@ function renderEdge(key, x1, y1, x2, y2, state) {
   const isHoriz = y1 === y2;
 
   if (state === 'undetermined') {
-    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e0e0e0" stroke-width="${LINE_W}" stroke-linecap="round" style="pointer-events:none;"/>`;
+    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e0e0e0" stroke-width="${LINE_W()}" stroke-linecap="round" style="pointer-events:none;"/>`;
   } else if (state === 'line') {
-    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000" stroke-width="${LINE_W}" stroke-linecap="round" style="pointer-events:none;"/>`;
+    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000" stroke-width="${LINE_W()}" stroke-linecap="round" style="pointer-events:none;"/>`;
   } else if (state === 'emphasis') {
-    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#daa520" stroke-width="${LINE_W}" stroke-linecap="round" style="pointer-events:none;"/>`;
+    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#daa520" stroke-width="${LINE_W()}" stroke-linecap="round" style="pointer-events:none;"/>`;
   } else if (state === 'putative') {
     const dash = Math.round(CELL * 0.12);
     const gap = Math.round(CELL * 0.10);
-    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#c0f" stroke-width="${LINE_W}" stroke-linecap="butt" stroke-dasharray="${dash} ${gap}" style="pointer-events:none;"/>`;
+    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#c0f" stroke-width="${LINE_W()}" stroke-linecap="butt" stroke-dasharray="${dash} ${gap}" style="pointer-events:none;"/>`;
   } else if (state === 'xmark') {
-    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e0e0e0" stroke-width="${LINE_W}" stroke-linecap="round" style="pointer-events:none;"/>`;
+    edgeSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e0e0e0" stroke-width="${LINE_W()}" stroke-linecap="round" style="pointer-events:none;"/>`;
     const r = CELL * 0.12;
     edgeSvg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="#c00" stroke-width="2" stroke-linecap="round" style="pointer-events:none;"/>`;
     edgeSvg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="#c00" stroke-width="2" stroke-linecap="round" style="pointer-events:none;"/>`;
+  } else if (state === 'cross') {
+    // eliminated — no visible line, just the click target below
   }
 
   if (isHoriz) {
@@ -260,17 +408,39 @@ function renderEdge(key, x1, y1, x2, y2, state) {
 
 buildSVG();
 
+document.getElementById('palette').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tool]');
+  if (!btn) return;
+  activeTool = btn.dataset.tool;
+  document.querySelectorAll('#palette button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+document.getElementById('target-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-target]');
+  if (!btn) return;
+  clickTarget = btn.dataset.target;
+  document.querySelectorAll('#target-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
 document.getElementById('editor-svg').addEventListener('click', (e) => {
   const edgeEl = e.target.closest('.edge-target');
-  if (edgeEl) {
+  if (edgeEl && (clickTarget === 'both' || clickTarget === 'lines')) {
     const key = edgeEl.dataset.edge;
-    const current = edgeStates.get(key) || 'undetermined';
-    const idx = EDGE_TYPES.indexOf(current);
-    const next = EDGE_TYPES[(idx + 1) % EDGE_TYPES.length];
-    if (next === 'undetermined') {
+    if (activeTool === 'cycle') {
+      const current = edgeStates.get(key) || 'undetermined';
+      const idx = EDGE_TYPES.indexOf(current);
+      const next = EDGE_TYPES[(idx + 1) % EDGE_TYPES.length];
+      if (next === 'undetermined') {
+        edgeStates.delete(key);
+      } else {
+        edgeStates.set(key, next);
+      }
+    } else if (activeTool === 'undetermined') {
       edgeStates.delete(key);
     } else {
-      edgeStates.set(key, next);
+      edgeStates.set(key, activeTool);
     }
     buildSVG();
     updateOutput();
@@ -278,7 +448,7 @@ document.getElementById('editor-svg').addEventListener('click', (e) => {
   }
 
   const cellEl = e.target.closest('.cell-target');
-  if (cellEl) {
+  if (cellEl && (clickTarget === 'both' || clickTarget === 'cells')) {
     const key = cellEl.dataset.cell;
     const current = clueStates.get(key);
     if (current === undefined) {
@@ -371,13 +541,13 @@ function generateCode() {
   }
   if (clueTokens.length > 0) parts.push(`clues="${clueTokens.join(' ')}"`);
 
-  const byType = { line: [], emphasis: [], putative: [], xmark: [] };
+  const byType = { line: [], emphasis: [], putative: [], xmark: [], cross: [] };
   for (const [key, type] of edgeStates) {
     byType[type].push(key);
   }
 
-  const attrName = { line: 'lines', emphasis: 'emphasis', putative: 'putative', xmark: 'x-marks' };
-  for (const type of ['line', 'emphasis', 'putative', 'xmark']) {
+  const attrName = { line: 'lines', emphasis: 'emphasis', putative: 'putative', xmark: 'x-marks', cross: 'erased' };
+  for (const type of ['line', 'emphasis', 'putative', 'xmark', 'cross']) {
     if (byType[type].length > 0) {
       const chained = chainEdges(byType[type]);
       parts.push(`${attrName[type]}="${chained}"`);
@@ -406,8 +576,18 @@ function updateOutput() {
 updateOutput();
 
 document.getElementById('editor-svg').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const edgeEl = e.target.closest('.edge-target');
+  if (edgeEl && activeTool !== 'cycle' && (clickTarget === 'both' || clickTarget === 'lines')) {
+    const key = edgeEl.dataset.edge;
+    edgeStates.delete(key);
+    buildSVG();
+    updateOutput();
+    return;
+  }
+
   const cellEl = e.target.closest('.cell-target');
-  if (cellEl) {
+  if (cellEl && (clickTarget === 'both' || clickTarget === 'cells')) {
     e.preventDefault();
     const key = cellEl.dataset.cell;
     const current = clueStates.get(key);
@@ -460,6 +640,12 @@ for (const id of ['cont-top', 'cont-bottom', 'cont-left', 'cont-right']) {
   document.getElementById(id).addEventListener('change', () => updateOutput());
 }
 
+document.getElementById('zoom').addEventListener('input', (e) => {
+  CELL = parseInt(e.target.value, 10);
+  document.getElementById('zoom-val').textContent = CELL;
+  buildSVG();
+});
+
 document.getElementById('copy-btn').addEventListener('click', () => {
   const code = document.getElementById('code-output').textContent;
   navigator.clipboard.writeText(code).then(() => {
@@ -467,6 +653,18 @@ document.getElementById('copy-btn').addEventListener('click', () => {
     btn.textContent = 'Copied!';
     setTimeout(() => btn.textContent = 'Copy', 1500);
   });
+});
+
+const KEY_TO_TOOL = { c: 'cycle', r: 'undetermined', l: 'line', m: 'emphasis', p: 'putative', x: 'xmark', e: 'cross' };
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const tool = KEY_TO_TOOL[e.key.toLowerCase()];
+  if (tool) {
+    activeTool = tool;
+    document.querySelectorAll('#palette button').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#palette [data-tool="${tool}"]`);
+    if (btn) btn.classList.add('active');
+  }
 });
 </script>
 </body>

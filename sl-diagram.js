@@ -1,6 +1,6 @@
 class SLDiagram extends HTMLElement {
   static get observedAttributes() {
-    return ['size', 'clues', 'lines', 'crosses', 'emphasis', 'putative', 'x-marks', 'caption', 'continue', 'extents', 'baseline'];
+    return ['size', 'clues', 'lines', 'erased', 'emphasis', 'putative', 'x-marks', 'caption', 'continue', 'extents', 'baseline'];
   }
 
   constructor() {
@@ -108,7 +108,7 @@ class SLDiagram extends HTMLElement {
     const sizeAttr = this.getAttribute('size');
     const clueMap = SLDiagram.parseClues(this.getAttribute('clues'));
     const lineEdges = new Set(SLDiagram.parsePaths(this.getAttribute('lines')));
-    const crossEdges = new Set(SLDiagram.parsePaths(this.getAttribute('crosses')));
+    const crossEdges = new Set(SLDiagram.parsePaths(this.getAttribute('erased')));
     const emphasisEdges = new Set(SLDiagram.parsePaths(this.getAttribute('emphasis')));
     const putativeEdges = new Set(SLDiagram.parsePaths(this.getAttribute('putative')));
     const xMarkEdges = new Set(SLDiagram.parsePaths(this.getAttribute('x-marks')));
@@ -479,7 +479,7 @@ class SLSequence extends HTMLElement {
         maxW = Math.max(maxW, x);
         maxH = Math.max(maxH, y);
       }
-      for (const attr of ['lines', 'crosses', 'emphasis', 'putative', 'x-marks']) {
+      for (const attr of ['lines', 'erased', 'emphasis', 'putative', 'x-marks']) {
         const edges = SLDiagram.parsePaths(d.getAttribute(attr));
         for (const ek of edges) {
           const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);

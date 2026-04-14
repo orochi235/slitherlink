@@ -57,6 +57,13 @@
   .diagrams figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .diagrams figcaption { font-size: .78em; color: #666; font-style: italic; text-align: center; max-width: 180px; }
 
+  .glossary { background: white; border-radius: 10px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 28px; }
+  .glossary h2 { color: #1a1a6e; font-size: 1.2em; margin-top: 0; margin-bottom: 16px; }
+  .glossary-term { display: grid; grid-template-columns: 1fr auto; gap: 12px 24px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #eee; align-items: center; }
+  .glossary-term:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .glossary-term dt { font-weight: 700; color: #1a1a6e; font-size: 1em; margin-bottom: 4px; }
+  .glossary-term dd { margin: 0; font-size: .9em; line-height: 1.5; color: #333; }
+
   @media (max-width: 700px) {
     body { padding: 16px 12px; }
     .lemma, .axiom, .heuristic { grid-template-columns: 1fr; }
@@ -86,24 +93,56 @@
 <!-- ═══ LEMMA 1 ═══ -->
 <div class="lemma" id="lemma-1">
   <div class="lemma-text">
-  <div class="lemma-header"><span class="lemma-num">LEMMA 1</span><h2>Corner three</h2></div>
-  <p>A <strong>3</strong> in a corner cell forces all edges except the one at the outer corner vertex.
-     That vertex has only two edges and both border the 3-cell, but only one can be used — so
-     exactly one of them is in the loop, and the other two edges of the 3 are also <strong>forced</strong>.</p>
+  <div class="lemma-header"><span class="lemma-num">LEMMA 1</span><h2>Exposed corner of a three</h2></div>
+  <p>If a corner vertex of a <strong>3</strong>-cell has no edges other than the two
+     belonging to the cell (because the others are eliminated or don't exist),
+     both edges at that corner are <strong>forced</strong>. If they were both absent,
+     only 2 edges would remain — not enough to satisfy the clue.</p>
+  <div class="corollary">
+    ⟹ A 3 in a grid corner is the simplest case — the boundary itself creates the exposed corner.
+  </div>
   </div>
   <div class="diagrams">
     <sl-sequence>
       <sl-diagram
-        size="2x2" clues="1,1:3"
-        continue="right bottom"
-        caption="Corner 3"
+        size="3x3" clues="2,2:3"
+        x-marks="0,1->R; 1,0->D"
+        continue="all"
+        caption="Corner exposed by eliminations"
       ></sl-diagram>
       <sl-diagram
-        size="2x2" clues="1,1:3"
-        lines="0,0->R; 0,0->D"
-        putative="1,0->D; 0,1->R"
-        continue="right bottom"
-        caption="Two edges immediately forced"
+        size="3x3" clues="2,2:3"
+        x-marks="0,1->R; 1,0->D"
+        emphasis="1,1->R; 1,1->D"
+        continue="all"
+        caption="Both corner edges forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 1b ═══ -->
+<div class="lemma" id="lemma-1b">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 1b</span><h2>Exposed corner of a one</h2></div>
+  <p>If a corner vertex of a <strong>1</strong>-cell has no edges other than the two
+     belonging to the cell, both edges at that corner are <strong>eliminated</strong>.
+     Vertex parity requires both or neither — but if both were in the loop,
+     the cell would have 2 edges, violating the clue.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="3x3" clues="2,2:1"
+        x-marks="0,1->R; 1,0->D"
+        continue="all"
+        caption="Corner exposed by eliminations"
+      ></sl-diagram>
+      <sl-diagram
+        size="3x3" clues="2,2:1"
+        x-marks="0,1->R; 1,0->D; 1,1->R; 1,1->D"
+        continue="all"
+        caption="Both corner edges eliminated"
       ></sl-diagram>
     </sl-sequence>
   </div>
@@ -132,6 +171,32 @@
         emphasis="0,0->D; 1,0->D; 2,0->D; 3,0->D"
         continue="all"
         caption="Shared + parallel outer edges forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 2b ═══ -->
+<div class="lemma" id="lemma-2b">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 2b</span><h2>Zigzag threes</h2></div>
+  <p>A fully-solved row of <strong>3</strong>s forms a zigzag: each cell's missing edge
+     alternates between top and bottom. The loop weaves through the shared edges
+     like a circuit-board trace, entering from one side and exiting the other in
+     a single continuous path.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="5x1" clues="1,1:3 2,1:3 3,1:3 4,1:3 5,1:3"
+        continue="all"
+        caption="Five 3s in a row"
+      ></sl-diagram>
+      <sl-diagram
+        size="5x1" clues="1,1:3 2,1:3 3,1:3 4,1:3 5,1:3"
+        lines="0,1->URDRURDRURD"
+        continue="all"
+        caption="Zigzag solution"
       ></sl-diagram>
     </sl-sequence>
   </div>
@@ -183,6 +248,97 @@
         x-marks="0,1->U"
         continue="all"
         caption="Can't close yet"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 5 ═══ -->
+<div class="lemma" id="lemma-5">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 5</span><h2>Cascading chevrons</h2></div>
+  <p>If two loop edges meet at a corner of a <strong>2</strong>-cell, the cell's remaining
+     two edges must meet at the <strong>opposite corner</strong> — forming a chevron.
+     When that opposite corner is shared with another 2-cell, the pattern cascades
+     diagonally.</p>
+  <div class="corollary">
+    ⟹ A diagonal chain of 2s with a chevron at one end forces chevrons all the way through.
+  </div>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="3x3" clues="2,2:2 3,3:2"
+        lines="1,0->D; 0,1->R"
+        continue="all"
+        caption="Two edges at corner of a 2"
+      ></sl-diagram>
+      <sl-diagram
+        size="3x3" clues="2,2:2 3,3:2"
+        lines="1,0->D; 0,1->R"
+        emphasis="1,2->R; 2,1->D; 2,3->R; 3,2->D"
+        continue="all"
+        caption="Chevrons cascade diagonally"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 6 ═══ -->
+<div class="lemma" id="lemma-6">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 6</span><h2>Trapped approach on a one</h2></div>
+  <p>If a loop edge approaches a corner of a <strong>1</strong>-cell and has no way to
+     leave that vertex without entering the cell, the line must use exactly one
+     of the two cell edges at that corner. This satisfies the clue, so the two
+     edges at the <strong>opposite corner</strong> are eliminated.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="2x2" clues="2,2:1"
+        lines="1,0->D"
+        x-marks="0,1->R"
+        continue="all"
+        caption="Line can't escape corner"
+      ></sl-diagram>
+      <sl-diagram
+        size="2x2" clues="2,2:1"
+        lines="1,0->D"
+        x-marks="0,1->R; 1,2->R; 2,1->D"
+        continue="all"
+        caption="Opposite edges eliminated"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
+<!-- ═══ LEMMA 7 ═══ -->
+<div class="lemma" id="lemma-7">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 7</span><h2>Approaching a two</h2></div>
+  <p>If a <strong>2</strong>-cell has one edge eliminated and a loop edge approaches a
+     vertex that borders two of the cell's three remaining edges, the third
+     remaining edge (not at that vertex) is <strong>forced</strong>. The approaching line
+     must use exactly one of the two edges at that vertex, accounting for one
+     of the cell's two required edges — so the distant edge must supply the other.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="2x2" clues="2,2:2"
+        lines="2,0->D"
+        x-marks="1,2->R"
+        continue="all"
+        caption="Line approaches; bottom eliminated"
+      ></sl-diagram>
+      <sl-diagram
+        size="2x2" clues="2,2:2"
+        lines="2,0->D"
+        x-marks="1,2->R"
+        emphasis="1,1->D"
+        continue="all"
+        caption="Left edge forced"
       ></sl-diagram>
     </sl-sequence>
   </div>
@@ -242,7 +398,7 @@
     <div class="diagrams">
       <sl-diagram
         size="1x1" clues="1,1:2"
-        crosses="0,0->R; 0,0->D"
+        erased="0,0->R; 0,0->D"
         emphasis="1,0->D; 0,1->R"
         continue="all"
         caption="2-cell with 2 left → both forced"
@@ -302,7 +458,7 @@
     <div class="diagrams">
       <sl-diagram
         size="2x2" clues="1,1:0"
-        crosses="0,0->RDR; 0,1->R"
+        erased="0,0->RDR; 0,1->R"
         x-marks="1,0->R; 2,0->D"
         continue="all"
         caption="Corner vertex with 1 edge left → eliminated"
@@ -317,11 +473,102 @@
   <h2>Quick Reference</h2>
   <table>
     <tr><th>Lemma</th><th>Pattern</th><th>Result</th></tr>
-    <tr><td>1 — Corner three</td><td>3 in corner</td><td>Two non-corner edges forced</td></tr>
+    <tr><td>1 — Exposed corner of a three</td><td>3-cell with exposed corner</td><td>Both edges at that corner forced</td></tr>
     <tr><td>2 — Adjacent threes</td><td>Two 3s sharing an edge</td><td>Shared + all outer edges forced</td></tr>
     <tr><td>3 — Diagonal threes</td><td>Two 3s sharing a vertex</td><td>Non-bordering edges at shared vertex forced</td></tr>
     <tr><td>4 — One loop to rule them all</td><td>Closing edge available</td><td>Eliminated if clues unsatisfied</td></tr>
+    <tr><td>5 — Cascading chevrons</td><td>Two edges at corner of a 2</td><td>Opposite corner edges forced; cascades through diagonal 2s</td></tr>
+    <tr><td>6 — Trapped approach on a one</td><td>Line trapped at corner of a 1</td><td>Opposite corner edges eliminated</td></tr>
+    <tr><td>7 — Approaching a two</td><td>Line approaches 2-cell with one edge eliminated</td><td>Distant remaining edge forced</td></tr>
   </table>
+</div>
+
+<div class="glossary">
+  <h2>Glossary</h2>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Clear</dt>
+      <dd>An edge whose status is undetermined — it may or may not be part of the loop.
+          Drawn as a faint gray line.</dd>
+    </div>
+    <sl-diagram
+      size="1x1"
+      continue="all"
+      caption="All edges clear"
+    ></sl-diagram>
+  </dl>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Eliminated</dt>
+      <dd>An edge confirmed to NOT be part of the loop. Shown with a red ✕ mark
+          or removed entirely from the grid.</dd>
+    </div>
+    <sl-diagram
+      size="2x1"
+      x-marks="0,0->R"
+      continue="all"
+      caption="Eliminated edge"
+    ></sl-diagram>
+  </dl>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Exposed</dt>
+      <dd>A vertex of a cell where all non-cell edges have been eliminated or don't exist,
+          leaving only the cell's own edges. An exposed corner of a 3-cell forces both edges.</dd>
+    </div>
+    <sl-diagram
+      size="2x2" clues="2,2:3"
+      x-marks="0,1->R; 1,0->D"
+      continue="all"
+      caption="Vertex (1,1) is exposed"
+    ></sl-diagram>
+  </dl>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Filled</dt>
+      <dd>An edge confirmed to be part of the loop. Drawn as a solid black line.</dd>
+    </div>
+    <sl-diagram
+      size="2x1"
+      lines="0,0->R"
+      continue="all"
+      caption="Filled edge"
+    ></sl-diagram>
+  </dl>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Forced</dt>
+      <dd>An edge that must be part of the loop, as determined by logical deduction.
+          Shown in goldenrod to highlight the deduction.</dd>
+    </div>
+    <sl-diagram
+      size="2x1" clues="1,1:2"
+      lines="0,0->R"
+      x-marks="0,0->D"
+      emphasis="1,0->D"
+      continue="all"
+      caption="Right edge forced"
+    ></sl-diagram>
+  </dl>
+
+  <dl class="glossary-term">
+    <div>
+      <dt>Tail</dt>
+      <dd>A string of connected loop edges that attaches to the rest of the loop at only one end.
+          The free end must eventually connect — it cannot dead-end.</dd>
+    </div>
+    <sl-diagram
+      size="5x2"
+      erased="0,0->DDRRRUU; 0,0->R; 2,0->DD; 1,1->D; 1,1->RRRR; 4,0->DD"
+      continue="none"
+      caption="Handle forms a tail"
+    ></sl-diagram>
+  </dl>
 </div>
 
 <script src="sl-diagram.js"></script>
