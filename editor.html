@@ -348,10 +348,33 @@ function buildSVG() {
     }
   }
 
+  // Layer: base vertex dots
   for (let y = 0; y <= gridH; y++) {
     for (let x = 0; x <= gridW; x++) {
       content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R()}" fill="#000" style="pointer-events:none;"/>`;
     }
+  }
+
+  // Layer: specialized endpoint dots (putative, line, emphasis)
+  const vertsByType = { putative: new Set(), line: new Set(), emphasis: new Set() };
+  for (const [key, state] of edgeStates) {
+    if (vertsByType[state]) {
+      const [a, b] = key.split('|');
+      vertsByType[state].add(a);
+      vertsByType[state].add(b);
+    }
+  }
+  for (const v of vertsByType.putative) {
+    const [x, y] = v.split(',').map(Number);
+    content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R()}" fill="white" stroke="#c0f" stroke-width="2" style="pointer-events:none;"/>`;
+  }
+  for (const v of vertsByType.line) {
+    const [x, y] = v.split(',').map(Number);
+    content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R()}" fill="#000" style="pointer-events:none;"/>`;
+  }
+  for (const v of vertsByType.emphasis) {
+    const [x, y] = v.split(',').map(Number);
+    content += `<circle cx="${vx(x)}" cy="${vy(y)}" r="${DOT_R()}" fill="#daa520" style="pointer-events:none;"/>`;
   }
 
   for (let cy = 1; cy <= gridH; cy++) {
