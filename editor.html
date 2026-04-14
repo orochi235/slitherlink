@@ -436,6 +436,38 @@ document.getElementById('editor-svg').addEventListener('mouseout', (e) => {
     e.target.style.fill = 'transparent';
   }
 });
+
+document.getElementById('grid-w').addEventListener('change', (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (v >= 1) {
+    gridW = v;
+    resetState();
+    buildSVG();
+    updateOutput();
+  }
+});
+document.getElementById('grid-h').addEventListener('change', (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (v >= 1) {
+    gridH = v;
+    resetState();
+    buildSVG();
+    updateOutput();
+  }
+});
+
+for (const id of ['cont-top', 'cont-bottom', 'cont-left', 'cont-right']) {
+  document.getElementById(id).addEventListener('change', () => updateOutput());
+}
+
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const code = document.getElementById('code-output').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+});
 </script>
 </body>
 </html>
