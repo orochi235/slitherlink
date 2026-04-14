@@ -293,9 +293,117 @@ document.getElementById('editor-svg').addEventListener('click', (e) => {
   }
 });
 
-function updateOutput() {
-  // will be implemented in Task 5
+function directionLetter(x1, y1, x2, y2) {
+  if (x2 === x1 + 1) return 'R';
+  if (x2 === x1 - 1) return 'L';
+  if (y2 === y1 + 1) return 'D';
+  if (y2 === y1 - 1) return 'U';
+  return null;
 }
+
+function chainEdges(edgeKeys) {
+  if (edgeKeys.length === 0) return '';
+
+  const adj = new Map();
+  const addAdj = (vKey, nKey, ek) => {
+    if (!adj.has(vKey)) adj.set(vKey, []);
+    adj.get(vKey).push({ neighbor: nKey, edgeKey: ek });
+  };
+  const remaining = new Set(edgeKeys);
+
+  for (const ek of edgeKeys) {
+    const [a, b] = ek.split('|');
+    addAdj(a, b, ek);
+    addAdj(b, a, ek);
+  }
+
+  const segments = [];
+
+  while (remaining.size > 0) {
+    let startVertex = null;
+    for (const ek of remaining) {
+      const [a, b] = ek.split('|');
+      const degA = (adj.get(a) || []).filter(e => remaining.has(e.edgeKey)).length;
+      const degB = (adj.get(b) || []).filter(e => remaining.has(e.edgeKey)).length;
+      if (degA === 1) { startVertex = a; break; }
+      if (degB === 1) { startVertex = b; break; }
+    }
+    if (!startVertex) {
+      const firstEdge = remaining.values().next().value;
+      startVertex = firstEdge.split('|')[0];
+    }
+
+    let current = startVertex;
+    let dirs = '';
+    let moved = true;
+    while (moved) {
+      moved = false;
+      const neighbors = adj.get(current) || [];
+      for (const { neighbor, edgeKey: ek } of neighbors) {
+        if (remaining.has(ek)) {
+          const [cx, cy] = current.split(',').map(Number);
+          const [nx, ny] = neighbor.split(',').map(Number);
+          dirs += directionLetter(cx, cy, nx, ny);
+          remaining.delete(ek);
+          current = neighbor;
+          moved = true;
+          break;
+        }
+      }
+    }
+    const [sx, sy] = startVertex.split(',');
+    segments.push(`${sx},${sy}->${dirs}`);
+  }
+
+  return segments.join('; ');
+}
+
+function generateCode() {
+  const parts = [];
+  parts.push(`size="${gridW}x${gridH}"`);
+
+  const clueTokens = [];
+  for (let cy = 1; cy <= gridH; cy++) {
+    for (let cx = 1; cx <= gridW; cx++) {
+      const v = clueStates.get(`${cx},${cy}`);
+      if (v !== undefined) clueTokens.push(`${cx},${cy}:${v}`);
+    }
+  }
+  if (clueTokens.length > 0) parts.push(`clues="${clueTokens.join(' ')}"`);
+
+  const byType = { line: [], emphasis: [], putative: [], xmark: [] };
+  for (const [key, type] of edgeStates) {
+    byType[type].push(key);
+  }
+
+  const attrName = { line: 'lines', emphasis: 'emphasis', putative: 'putative', xmark: 'x-marks' };
+  for (const type of ['line', 'emphasis', 'putative', 'xmark']) {
+    if (byType[type].length > 0) {
+      const chained = chainEdges(byType[type]);
+      parts.push(`${attrName[type]}="${chained}"`);
+    }
+  }
+
+  const sides = [];
+  if (document.getElementById('cont-top').checked) sides.push('top');
+  if (document.getElementById('cont-bottom').checked) sides.push('bottom');
+  if (document.getElementById('cont-left').checked) sides.push('left');
+  if (document.getElementById('cont-right').checked) sides.push('right');
+  const contValue = sides.length === 4 ? 'all' : sides.length === 0 ? 'none' : sides.join(' ');
+  parts.push(`continue="${contValue}"`);
+
+  return `<sl-diagram\n  ${parts.join('\n  ')}\n></sl-diagram>`;
+}
+
+function updateOutput() {
+  const code = generateCode();
+  document.getElementById('code-output').textContent = code;
+
+  const container = document.getElementById('preview-container');
+  container.innerHTML = code;
+}
+
+updateOutput();
 
 document.getElementById('editor-svg').addEventListener('contextmenu', (e) => {
   const cellEl = e.target.closest('.cell-target');
