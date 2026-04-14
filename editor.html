@@ -4,16 +4,20 @@
 <meta charset="UTF-8">
 <title>Slitherlink Diagram Editor</title>
 <style>
-  * { box-sizing: border-box; margin: 0; }
+  * { box-sizing: border-box; margin: 0; user-select: none; }
+  .code-block, textarea, input { user-select: text; }
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: #f4f5f7;
     color: #1a1a2e;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr var(--code-panel-width, 400px);
+    grid-template-rows: auto 1fr;
   }
   .toolbar {
+    grid-column: 1;
+    grid-row: 1;
     background: white;
     padding: 12px 20px;
     display: flex;
@@ -21,6 +25,7 @@
     gap: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,.08);
     flex-wrap: wrap;
+    z-index: 1;
   }
   .toolbar label {
     font-size: .85em;
@@ -73,8 +78,9 @@
   .toolbar button:active { background: #0e0e4e; }
 
   .panels {
+    grid-column: 1;
+    grid-row: 2;
     display: flex;
-    flex: 1;
     overflow: hidden;
   }
   .grid-panel {
@@ -86,20 +92,30 @@
     padding: 24px;
   }
   .code-panel {
-    width: var(--code-panel-width, 400px);
-    min-width: 400px;
+    grid-column: 2;
+    grid-row: 1 / -1;
     background: white;
     border-left: 1px solid #e0e0e0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 20px;
+    padding: 12px 20px 20px;
     gap: 16px;
   }
   .code-panel h3 {
     font-size: .9em;
     color: #1a1a6e;
     margin: 0;
+  }
+  .code-panel #copy-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 5px;
+    background: #1a1a6e;
+    color: white;
+    font-size: .82em;
+    font-weight: 600;
+    cursor: pointer;
   }
   .code-block {
     background: #f8f8fa;
@@ -141,7 +157,8 @@
     margin-bottom: 2px;
   }
   .palette button {
-    padding: 8px 12px;
+    padding: 4px 12px;
+    min-height: 30px;
     border: 2px solid #ccc;
     border-radius: 6px;
     background: white;
@@ -164,7 +181,7 @@
     border-radius: 2px;
     flex-shrink: 0;
   }
-  .palette .swatch-cycle { background: linear-gradient(90deg, #000 0%, #daa520 33%, #c0f 66%, #c00 100%); width: 28px; }
+  .palette .swatch-cycle { background: conic-gradient(#e0e0e0, #000, #daa520, #c0f, #f4f5f7, #e0e0e0); width: 18px; height: 18px; border-radius: 50%; margin: 0 2px; -webkit-mask: radial-gradient(circle, transparent 33%, #000 35%); mask: radial-gradient(circle, transparent 33%, #000 35%); }
   .palette .swatch-undetermined { background: #e0e0e0; }
   .palette .swatch-line { background: #000; }
   .palette .swatch-emphasis { background: #daa520; }
@@ -252,7 +269,18 @@
     <input type="range" id="zoom" min="24" max="96" value="48" step="4">
     <span class="zoom-val" id="zoom-val">48</span>
   </div>
-  <button id="copy-btn">Copy</button>
+  <button id="import-btn">Import</button>
+</div>
+
+<div id="import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:24px;width:500px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 style="margin:0 0 12px;color:#1a1a6e;font-size:1em;">Import Diagram</h3>
+    <textarea id="import-input" rows="6" placeholder="Paste <sl-diagram ...> here" style="width:100%;font-family:'SF Mono','Fira Code','Consolas',monospace;font-size:.82em;border:1px solid #ccc;border-radius:6px;padding:10px;resize:vertical;box-sizing:border-box;"></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+      <button id="import-cancel" style="padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:white;cursor:pointer;">Cancel</button>
+      <button id="import-load" style="padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#1a1a6e;color:white;font-weight:600;cursor:pointer;">Load</button>
+    </div>
+  </div>
 </div>
 
 <div class="panels">
@@ -269,12 +297,15 @@
   <div class="grid-panel">
     <svg id="editor-svg"></svg>
   </div>
-  <div class="code-panel">
+</div>
+<div class="code-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
     <h3>Generated Code</h3>
-    <pre class="code-block" id="code-output"></pre>
-    <h3>Preview</h3>
-    <div class="preview-section" id="preview-container"></div>
+    <button id="copy-btn">Copy</button>
   </div>
+  <pre class="code-block" id="code-output"></pre>
+  <h3>Preview</h3>
+  <div class="preview-section" id="preview-container"></div>
 </div>
 
 <script src="sl-diagram.js"></script>
@@ -627,7 +658,7 @@ function updateOutput() {
       if (svg) {
         const needed = svg.getAttribute('width');
         const w = Math.max(400, Math.min(800, (parseFloat(needed) || 0) + 60));
-        document.querySelector('.code-panel').style.setProperty('--code-panel-width', w + 'px');
+        document.body.style.setProperty('--code-panel-width', w + 'px');
       }
     }
   });
@@ -638,9 +669,20 @@ updateOutput();
 document.getElementById('editor-svg').addEventListener('contextmenu', (e) => {
   e.preventDefault();
   const edgeEl = e.target.closest('.edge-target');
-  if (edgeEl && activeTool !== 'cycle' && (clickTarget === 'both' || clickTarget === 'lines')) {
+  if (edgeEl && (clickTarget === 'both' || clickTarget === 'lines')) {
     const key = edgeEl.dataset.edge;
-    edgeStates.delete(key);
+    if (activeTool === 'cycle') {
+      const current = edgeStates.get(key) || 'undetermined';
+      const idx = EDGE_TYPES.indexOf(current);
+      const prev = EDGE_TYPES[(idx - 1 + EDGE_TYPES.length) % EDGE_TYPES.length];
+      if (prev === 'undetermined') {
+        edgeStates.delete(key);
+      } else {
+        edgeStates.set(key, prev);
+      }
+    } else {
+      edgeStates.delete(key);
+    }
     buildSVG();
     updateOutput();
     return;
@@ -744,6 +786,64 @@ document.addEventListener('keydown', (e) => {
     const btn = document.querySelector(`#palette [data-tool="${tool}"]`);
     if (btn) btn.classList.add('active');
   }
+});
+
+const importModal = document.getElementById('import-modal');
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-input').value = '';
+  importModal.style.display = 'flex';
+  document.getElementById('import-input').focus();
+});
+document.getElementById('import-cancel').addEventListener('click', () => {
+  importModal.style.display = 'none';
+});
+importModal.addEventListener('click', (e) => {
+  if (e.target === importModal) importModal.style.display = 'none';
+});
+document.getElementById('import-load').addEventListener('click', () => {
+  const raw = document.getElementById('import-input').value.trim();
+  const tmp = document.createElement('div');
+  tmp.innerHTML = raw;
+  const el = tmp.querySelector('sl-diagram') || tmp.firstElementChild;
+  if (!el) { importModal.style.display = 'none'; return; }
+
+  const sizeAttr = el.getAttribute('size');
+  if (sizeAttr) {
+    const [w, h] = sizeAttr.split('x').map(Number);
+    if (w > 0 && h > 0) {
+      gridW = w; gridH = h;
+      document.getElementById('grid-w').value = gridW;
+      document.getElementById('grid-h').value = gridH;
+    }
+  }
+
+  edgeStates = new Map();
+  xmarkSet = new Set();
+  clueStates = new Map();
+
+  const clueMap = SLDiagram.parseClues(el.getAttribute('clues'));
+  for (const [coord, val] of clueMap) clueStates.set(coord, val);
+
+  const typeMap = { lines: 'line', emphasis: 'emphasis', putative: 'putative', erased: 'cross' };
+  for (const [attr, type] of Object.entries(typeMap)) {
+    for (const ek of SLDiagram.parsePaths(el.getAttribute(attr))) {
+      edgeStates.set(ek, type);
+    }
+  }
+  for (const ek of SLDiagram.parsePaths(el.getAttribute('x-marks'))) {
+    xmarkSet.add(ek);
+  }
+
+  const cont = el.getAttribute('continue') || 'all';
+  const sides = cont === 'all' ? ['top','bottom','left','right'] : cont === 'none' ? [] : cont.split(/\s+/);
+  for (const id of ['cont-top','cont-bottom','cont-left','cont-right']) {
+    const side = id.replace('cont-', '');
+    document.getElementById(id).checked = sides.includes(side);
+  }
+
+  importModal.style.display = 'none';
+  buildSVG();
+  updateOutput();
 });
 </script>
 </body>

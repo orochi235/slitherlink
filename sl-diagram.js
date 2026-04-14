@@ -214,7 +214,7 @@ class SLDiagram extends HTMLElement {
 
     // Layer 1: Undetermined edges
     for (const ek of allGridEdges) {
-      if (lineEdges.has(ek) || emphasisEdges.has(ek) || putativeEdges.has(ek) || xMarkEdges.has(ek)) continue;
+      if (lineEdges.has(ek) || emphasisEdges.has(ek) || putativeEdges.has(ek)) continue;
       if (crossEdges.has(ek)) continue; // gap: skip eliminated edges
       const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
       svg += `<line x1="${vx(x1)}" y1="${vy(y1)}" x2="${vx(x2)}" y2="${vy(y2)}" stroke="${COL.grid}" stroke-width="${LINE_W}" stroke-linecap="round"/>`;
