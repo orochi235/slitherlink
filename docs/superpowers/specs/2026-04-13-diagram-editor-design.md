@@ -12,7 +12,7 @@ Controls in a horizontal toolbar at top. Below: interactive grid (left) and code
 
 ### Toolbar
 
-- **Width** and **Height** number inputs (min 1, max ~10). Changing these resets the grid state.
+- **Width** and **Height** number inputs (min 1, no hard max). Changing these resets the grid state.
 - **Continue checkboxes**: four checkboxes labeled Top, Bottom, Left, Right. All checked by default (matching the `continue="all"` convention).
 - **Copy button**: copies the generated `<sl-diagram>` code to clipboard.
 
