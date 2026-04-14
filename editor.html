@@ -276,11 +276,44 @@ document.getElementById('editor-svg').addEventListener('click', (e) => {
     updateOutput();
     return;
   }
+
+  const cellEl = e.target.closest('.cell-target');
+  if (cellEl) {
+    const key = cellEl.dataset.cell;
+    const current = clueStates.get(key);
+    if (current === undefined) {
+      clueStates.set(key, 0);
+    } else if (current >= 3) {
+      clueStates.delete(key);
+    } else {
+      clueStates.set(key, current + 1);
+    }
+    buildSVG();
+    updateOutput();
+  }
 });
 
 function updateOutput() {
   // will be implemented in Task 5
 }
+
+document.getElementById('editor-svg').addEventListener('contextmenu', (e) => {
+  const cellEl = e.target.closest('.cell-target');
+  if (cellEl) {
+    e.preventDefault();
+    const key = cellEl.dataset.cell;
+    const current = clueStates.get(key);
+    if (current === undefined) {
+      clueStates.set(key, 3);
+    } else if (current <= 0) {
+      clueStates.delete(key);
+    } else {
+      clueStates.set(key, current - 1);
+    }
+    buildSVG();
+    updateOutput();
+  }
+});
 
 document.getElementById('editor-svg').addEventListener('mouseover', (e) => {
   if (e.target.classList.contains('edge-target')) {
