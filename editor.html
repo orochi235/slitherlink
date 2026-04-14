@@ -86,8 +86,8 @@
     padding: 24px;
   }
   .code-panel {
-    width: 400px;
-    min-width: 300px;
+    width: var(--code-panel-width, 400px);
+    min-width: 400px;
     background: white;
     border-left: 1px solid #e0e0e0;
     display: flex;
@@ -594,6 +594,19 @@ function updateOutput() {
 
   const container = document.getElementById('preview-container');
   container.innerHTML = code;
+
+  // Resize code panel to fit preview diagram
+  requestAnimationFrame(() => {
+    const diagram = container.querySelector('sl-diagram');
+    if (diagram && diagram.shadowRoot) {
+      const svg = diagram.shadowRoot.querySelector('svg');
+      if (svg) {
+        const needed = svg.getAttribute('width');
+        const w = Math.max(400, Math.min(800, (parseFloat(needed) || 0) + 60));
+        document.querySelector('.code-panel').style.setProperty('--code-panel-width', w + 'px');
+      }
+    }
+  });
 }
 
 updateOutput();
