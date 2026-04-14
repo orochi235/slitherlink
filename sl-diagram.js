@@ -259,16 +259,6 @@ class SLDiagram extends HTMLElement {
     if (!fL) borderLine(bLeft, bTop - (!fT ? bw2 : 0), bLeft, bBottom + (!fB ? bw2 : 0), fT, fB, false);
     if (!fR) borderLine(bRight, bTop - (!fT ? bw2 : 0), bRight, bBottom + (!fB ? bw2 : 0), fT, fB, false);
 
-    // Layer 2: X-mark markers
-    for (const ek of xMarkEdges) {
-      const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
-      const mx = (vx(x1) + vx(x2)) / 2;
-      const my = (vy(y1) + vy(y2)) / 2;
-      const r = C * 0.12;
-      svg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
-      svg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="${COL.cross}" stroke-width="2" stroke-linecap="round"/>`;
-    }
-
     // Layer 3: Vertex dots
     for (let y = eMinVY; y <= eMaxVY; y++) {
       for (let x = eMinVX; x <= eMaxVX; x++) {
@@ -338,7 +328,21 @@ class SLDiagram extends HTMLElement {
       }
     }
 
-    // Layer 9: Clue numbers
+    // Layer 9: X-mark markers (on top of everything)
+    for (const ek of xMarkEdges) {
+      const { x1, y1, x2, y2 } = SLDiagram.parseEdgeEndpoints(ek);
+      const mx = (vx(x1) + vx(x2)) / 2;
+      const my = (vy(y1) + vy(y2)) / 2;
+      const r = C * 0.12;
+      const xStroke = Math.max(2, Math.round(LINE_W * 0.6));
+      const outlineW = xStroke + 3;
+      svg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="white" stroke-width="${outlineW}" stroke-linecap="round"/>`;
+      svg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="white" stroke-width="${outlineW}" stroke-linecap="round"/>`;
+      svg += `<line x1="${mx - r}" y1="${my - r}" x2="${mx + r}" y2="${my + r}" stroke="${COL.cross}" stroke-width="${xStroke}" stroke-linecap="round"/>`;
+      svg += `<line x1="${mx - r}" y1="${my + r}" x2="${mx + r}" y2="${my - r}" stroke="${COL.cross}" stroke-width="${xStroke}" stroke-linecap="round"/>`;
+    }
+
+    // Layer 10: Clue numbers
     const fontSize = Math.round(C * 0.625);
     for (const [coord, val] of clueMap) {
       const [cx, cy] = coord.split(',').map(Number);
