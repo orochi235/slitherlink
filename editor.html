@@ -170,7 +170,7 @@
   .palette .swatch-emphasis { background: #daa520; }
   .palette .swatch-putative { background: repeating-linear-gradient(90deg, #c0f 0 6px, transparent 6px 8px); background-size: 22px 100%; }
   .palette .swatch-xmark { background: transparent; font-size: 14px; font-weight: 700; color: #c00; width: 22px; height: auto; line-height: 1; text-align: center; }
-  .palette .swatch-cross { background: #f4f5f7; border: 1px dashed #ccc; height: 3px; }
+  .palette .swatch-cross { background: #f4f5f7; border: 1px dashed #ccc; width: 16px; height: 14px; border-radius: 2px; margin: 0 3px; }
 
   .target-group {
     display: flex;
@@ -260,7 +260,7 @@
     <span class="palette-label">Tool</span>
     <button class="active" data-tool="cycle"><span class="swatch swatch-cycle"></span>Cycle</button>
     <button data-tool="undetermined"><span class="swatch swatch-undetermined"></span>Reset</button>
-    <button data-tool="line"><span class="swatch swatch-line"></span>Line</button>
+    <button data-tool="line"><span class="swatch swatch-line"></span>Filled</button>
     <button data-tool="emphasis"><span class="swatch swatch-emphasis"></span>Emphasis</button>
     <button data-tool="putative"><span class="swatch swatch-putative"></span>Putative</button>
     <button data-tool="xmark"><span class="swatch swatch-xmark">✕</span>X-mark</button>
@@ -695,7 +695,7 @@ document.getElementById('copy-btn').addEventListener('click', () => {
   });
 });
 
-const KEY_TO_TOOL = { c: 'cycle', r: 'undetermined', l: 'line', m: 'emphasis', p: 'putative', x: 'xmark', e: 'cross' };
+const KEY_TO_TOOL = { c: 'cycle', r: 'undetermined', f: 'line', m: 'emphasis', p: 'putative', x: 'xmark', e: 'cross' };
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === '`') {
@@ -705,6 +705,16 @@ document.addEventListener('keydown', (e) => {
     const btn = document.querySelector(`#target-toggle [data-target="${clickTarget}"]`);
     if (btn) btn.classList.add('active');
     buildSVG();
+    return;
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const tools = [...document.querySelectorAll('#palette [data-tool]')].map(b => b.dataset.tool);
+    const idx = tools.indexOf(activeTool);
+    activeTool = tools[(idx + (e.shiftKey ? tools.length - 1 : 1)) % tools.length];
+    document.querySelectorAll('#palette button').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#palette [data-tool="${activeTool}"]`);
+    if (btn) btn.classList.add('active');
     return;
   }
   const tool = KEY_TO_TOOL[e.key.toLowerCase()];
