@@ -259,6 +259,42 @@ function renderEdge(key, x1, y1, x2, y2, state) {
 }
 
 buildSVG();
+
+document.getElementById('editor-svg').addEventListener('click', (e) => {
+  const edgeEl = e.target.closest('.edge-target');
+  if (edgeEl) {
+    const key = edgeEl.dataset.edge;
+    const current = edgeStates.get(key) || 'undetermined';
+    const idx = EDGE_TYPES.indexOf(current);
+    const next = EDGE_TYPES[(idx + 1) % EDGE_TYPES.length];
+    if (next === 'undetermined') {
+      edgeStates.delete(key);
+    } else {
+      edgeStates.set(key, next);
+    }
+    buildSVG();
+    updateOutput();
+    return;
+  }
+});
+
+function updateOutput() {
+  // will be implemented in Task 5
+}
+
+document.getElementById('editor-svg').addEventListener('mouseover', (e) => {
+  if (e.target.classList.contains('edge-target')) {
+    e.target.style.fill = 'rgba(26, 26, 110, 0.08)';
+  }
+  if (e.target.classList.contains('cell-target')) {
+    e.target.style.fill = 'rgba(26, 26, 110, 0.06)';
+  }
+});
+document.getElementById('editor-svg').addEventListener('mouseout', (e) => {
+  if (e.target.classList.contains('edge-target') || e.target.classList.contains('cell-target')) {
+    e.target.style.fill = 'transparent';
+  }
+});
 </script>
 </body>
 </html>
