@@ -385,7 +385,8 @@ function buildSVG() {
       const clueText = clue !== undefined ? clue : '';
       const fontSize = Math.round(CELL * 0.625);
       const half = CELL / 2 - 6;
-      content += `<rect x="${px - half}" y="${py - half}" width="${half * 2}" height="${half * 2}" fill="transparent" style="cursor:pointer;" data-cell="${cx},${cy}" class="cell-target"/>`;
+      const cellCursor = (clickTarget === 'both' || clickTarget === 'cells') ? 'pointer' : 'default';
+      content += `<rect x="${px - half}" y="${py - half}" width="${half * 2}" height="${half * 2}" fill="transparent" style="cursor:${cellCursor};" data-cell="${cx},${cy}" class="cell-target"/>`;
       if (clueText !== '') {
         content += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${fontSize}" font-weight="600" fill="#000" style="pointer-events:none;">${clueText}</text>`;
       }
@@ -421,9 +422,11 @@ function renderEdge(key, x1, y1, x2, y2, state) {
   }
 
   if (isHoriz) {
-    edgeSvg += `<rect x="${x1}" y="${my - EDGE_HIT}" width="${x2 - x1}" height="${EDGE_HIT * 2}" fill="transparent" style="cursor:pointer;" data-edge="${key}" class="edge-target"/>`;
+    const edgeCursor = (clickTarget === 'both' || clickTarget === 'lines') ? 'pointer' : 'default';
+    edgeSvg += `<rect x="${x1}" y="${my - EDGE_HIT}" width="${x2 - x1}" height="${EDGE_HIT * 2}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
   } else {
-    edgeSvg += `<rect x="${mx - EDGE_HIT}" y="${y1}" width="${EDGE_HIT * 2}" height="${y2 - y1}" fill="transparent" style="cursor:pointer;" data-edge="${key}" class="edge-target"/>`;
+    const edgeCursor = (clickTarget === 'both' || clickTarget === 'lines') ? 'pointer' : 'default';
+    edgeSvg += `<rect x="${mx - EDGE_HIT}" y="${y1}" width="${EDGE_HIT * 2}" height="${y2 - y1}" fill="transparent" style="cursor:${edgeCursor};" data-edge="${key}" class="edge-target"/>`;
   }
 
   return edgeSvg;
@@ -445,6 +448,7 @@ document.getElementById('target-toggle').addEventListener('click', (e) => {
   clickTarget = btn.dataset.target;
   document.querySelectorAll('#target-toggle button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  buildSVG();
 });
 
 document.getElementById('editor-svg').addEventListener('click', (e) => {
@@ -640,10 +644,10 @@ document.getElementById('editor-svg').addEventListener('contextmenu', (e) => {
 });
 
 document.getElementById('editor-svg').addEventListener('mouseover', (e) => {
-  if (e.target.classList.contains('edge-target')) {
+  if (e.target.classList.contains('edge-target') && (clickTarget === 'both' || clickTarget === 'lines')) {
     e.target.style.fill = 'rgba(26, 26, 110, 0.08)';
   }
-  if (e.target.classList.contains('cell-target')) {
+  if (e.target.classList.contains('cell-target') && (clickTarget === 'both' || clickTarget === 'cells')) {
     e.target.style.fill = 'rgba(26, 26, 110, 0.06)';
   }
 });
@@ -694,6 +698,15 @@ document.getElementById('copy-btn').addEventListener('click', () => {
 const KEY_TO_TOOL = { c: 'cycle', r: 'undetermined', l: 'line', m: 'emphasis', p: 'putative', x: 'xmark', e: 'cross' };
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === '`') {
+    const modes = ['lines', 'both', 'cells'];
+    clickTarget = modes[(modes.indexOf(clickTarget) + 1) % modes.length];
+    document.querySelectorAll('#target-toggle button').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#target-toggle [data-target="${clickTarget}"]`);
+    if (btn) btn.classList.add('active');
+    buildSVG();
+    return;
+  }
   const tool = KEY_TO_TOOL[e.key.toLowerCase()];
   if (tool) {
     activeTool = tool;
