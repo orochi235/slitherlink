@@ -232,33 +232,34 @@ class SLDiagram extends HTMLElement {
     let borderIdx = 0;
     let borderSvg = '';
     let borderDefs = '';
-    const borderLine = (x1, y1, x2, y2, fadeStart, fadeEnd, horiz) => {
-      let stroke = borderCol;
-      if (fadeStart || fadeEnd) {
-        const gid = `${buid}${borderIdx++}`;
-        const s1 = fadeStart ? 'rgba(153,153,153,0)' : borderCol;
-        const s2 = fadeStart ? borderCol : borderCol;
-        const s3 = fadeEnd ? 'rgba(153,153,153,0)' : borderCol;
-        const fadeLen = HC;
-        if (horiz) {
-          const total = x2 - x1;
+    const borderR = Math.round(C * 0.15); // corner radius
+
+    if (!fT && !fB && !fL && !fR) {
+      // All four sides: draw a rounded rect
+      borderSvg += `<rect x="${bLeft}" y="${bTop}" width="${bRight - bLeft}" height="${bBottom - bTop}" rx="${borderR}" ry="${borderR}" stroke="${borderCol}" stroke-width="${borderW}" fill="none"/>`;
+    } else {
+      // Partial border: gradient lines for fading ends
+      const borderLine = (x1, y1, x2, y2, fadeStart, fadeEnd, horiz) => {
+        let stroke = borderCol;
+        if (fadeStart || fadeEnd) {
+          const gid = `${buid}${borderIdx++}`;
+          const s1 = fadeStart ? 'rgba(153,153,153,0)' : borderCol;
+          const s2 = fadeStart ? borderCol : borderCol;
+          const s3 = fadeEnd ? 'rgba(153,153,153,0)' : borderCol;
+          const fadeLen = HC;
+          const total = horiz ? x2 - x1 : y2 - y1;
           const f1 = fadeStart ? fadeLen / total : 0;
           const f2 = fadeEnd ? 1 - fadeLen / total : 1;
           borderDefs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${s1}"/><stop offset="${f1}" stop-color="${s2}"/><stop offset="${f2}" stop-color="${borderCol}"/><stop offset="1" stop-color="${s3}"/></linearGradient>`;
-        } else {
-          const total = y2 - y1;
-          const f1 = fadeStart ? fadeLen / total : 0;
-          const f2 = fadeEnd ? 1 - fadeLen / total : 1;
-          borderDefs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${s1}"/><stop offset="${f1}" stop-color="${s2}"/><stop offset="${f2}" stop-color="${borderCol}"/><stop offset="1" stop-color="${s3}"/></linearGradient>`;
+          stroke = `url(#${gid})`;
         }
-        stroke = `url(#${gid})`;
-      }
-      borderSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${borderW}" stroke-linecap="butt"/>`;
-    };
-    if (!fT) borderLine(bLeft - (!fL ? bw2 : 0), bTop, bRight + (!fR ? bw2 : 0), bTop, fL, fR, true);
-    if (!fB) borderLine(bLeft - (!fL ? bw2 : 0), bBottom, bRight + (!fR ? bw2 : 0), bBottom, fL, fR, true);
-    if (!fL) borderLine(bLeft, bTop - (!fT ? bw2 : 0), bLeft, bBottom + (!fB ? bw2 : 0), fT, fB, false);
-    if (!fR) borderLine(bRight, bTop - (!fT ? bw2 : 0), bRight, bBottom + (!fB ? bw2 : 0), fT, fB, false);
+        borderSvg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${borderW}" stroke-linecap="butt"/>`;
+      };
+      if (!fT) borderLine(bLeft - (!fL ? bw2 : 0), bTop, bRight + (!fR ? bw2 : 0), bTop, fL, fR, true);
+      if (!fB) borderLine(bLeft - (!fL ? bw2 : 0), bBottom, bRight + (!fR ? bw2 : 0), bBottom, fL, fR, true);
+      if (!fL) borderLine(bLeft, bTop - (!fT ? bw2 : 0), bLeft, bBottom + (!fB ? bw2 : 0), fT, fB, false);
+      if (!fR) borderLine(bRight, bTop - (!fT ? bw2 : 0), bRight, bBottom + (!fB ? bw2 : 0), fT, fB, false);
+    }
 
     // Layer 3: Vertex dots
     for (let y = eMinVY; y <= eMaxVY; y++) {

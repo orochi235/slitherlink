@@ -75,6 +75,11 @@
 </head>
 <body>
 
+<div class="rules disclaimer" style="background: #cc0000; font-weight: bold;">
+<h2>Disclaimer</h2>
+<p>This page is a prototype and may contain errors. The author assumes no responsibility for the consequences of missolved puzzles. Use at your own risk.</p>
+</div>
+
 <h1>Slitherlink Solving Lemmas</h1>
 <p class="subtitle">A structured reference for logical deductions in Slitherlink (スリザーリンク) puzzles</p>
 
@@ -253,6 +258,34 @@
   </div>
 </div>
 
+<!-- ═══ LEMMA 4b ═══ -->
+<div class="lemma" id="lemma-4b">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 4b</span><h2>Three sides filled</h2></div>
+  <p>If a cell has three of its four edges in the loop, the fourth must be
+     <strong>eliminated</strong>. Filling it would close a small loop around just that cell,
+     violating the single-loop constraint — the rest of the grid would be
+     disconnected from the loop.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="1x1"
+        lines="0,0->RDLD"
+        continue="all"
+        caption="Three sides filled"
+      ></sl-diagram>
+      <sl-diagram
+        size="1x1"
+        lines="0,0->RDLD"
+        x-marks="0,0->D"
+        continue="all"
+        caption="Fourth must be open"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
 <!-- ═══ LEMMA 5 ═══ -->
 <div class="lemma" id="lemma-5">
   <div class="lemma-text">
@@ -346,6 +379,36 @@
   </div>
 </div>
 
+<!-- ═══ LEMMA 8 ═══ -->
+<div class="lemma" id="lemma-8">
+  <div class="lemma-text">
+  <div class="lemma-header"><span class="lemma-num">LEMMA 8</span><h2>Conductivity of a three</h2></div>
+  <p>If a loop edge approaches a vertex of a <strong>3</strong>-cell whose four edges are
+     all undetermined, the two edges at the <strong>opposite vertex</strong> are forced.
+     The approaching line uses exactly one of the two cell edges at its vertex
+     (it must enter but also exit), accounting for 1 of the 3 required edges —
+     the remaining 2 must be the opposite vertex's pair.</p>
+  </div>
+  <div class="diagrams">
+    <sl-sequence>
+      <sl-diagram
+        size="2x2" clues="1,1:3"
+        lines="0,0->D"
+        continue="all"
+        caption="Line approaches corner of a 3"
+      ></sl-diagram>
+      <sl-diagram
+        size="2x2" clues="1,1:3"
+        lines="0,0->D"
+        emphasis="1,1->R; 0,1->R"
+        putative="0,0->R; 1,0->D"
+        continue="all"
+        caption="Opposite corner edges forced"
+      ></sl-diagram>
+    </sl-sequence>
+  </div>
+</div>
+
 <!-- ═══ AXIOMS ═══ -->
 <details class="axioms" id="axiom-1" open>
   <summary>Axioms — basic operations</summary>
@@ -416,13 +479,23 @@
          only 1 undetermined edge remains, that edge is forced.</p>
     </div>
     <div class="diagrams">
-      <sl-diagram
-        size="2x1" clues="1,1:2"
-        lines="0,0->RR"
-        x-marks="0,0->D; 2,0->D"
-        continue="all"
-        caption="Vertex with 2 → others eliminated"
-      ></sl-diagram>
+      <sl-sequence>
+        <sl-diagram
+          size="2x1" clues="1,1:2"
+          lines="0,0->RR"
+          x-marks="0,0->D; 2,0->D"
+          continue="all"
+          caption="Vertex with 2 → others eliminated"
+        ></sl-diagram>
+        <sl-diagram
+          size="2x2"
+          lines="0,1->R"
+          x-marks="1,0->D; 1,2->R"
+          emphasis="1,1->D"
+          continue="all"
+          caption="1 loop edge + 1 remaining → forced"
+        ></sl-diagram>
+      </sl-sequence>
     </div>
   </div>
 
@@ -446,6 +519,32 @@
           x-marks="1,0->D; 1,1->D"
           continue="all"
           caption="Perpendiculars eliminated"
+        ></sl-diagram>
+      </sl-sequence>
+    </div>
+  </div>
+
+  <div class="axiom">
+    <div class="axiom-text">
+      <div class="axiom-header"><span class="axiom-num">AXIOM 7</span><h2>Elbowed out</h2></div>
+      <p>If two loop edges form an angle at a vertex, all other edges at that
+         vertex are eliminated. The vertex already has its two loop edges —
+         any additional edge would create a branch.</p>
+    </div>
+    <div class="diagrams">
+      <sl-sequence>
+        <sl-diagram
+          size="2x2"
+          lines="0,1->RD"
+          continue="all"
+          caption="Two edges form an elbow"
+        ></sl-diagram>
+        <sl-diagram
+          size="2x2"
+          lines="0,1->RD"
+          x-marks="1,0->D; 1,2->R"
+          continue="all"
+          caption="Other edges eliminated"
         ></sl-diagram>
       </sl-sequence>
     </div>
@@ -479,9 +578,11 @@
     <tr><td>2 — Adjacent threes</td><td>Two 3s sharing an edge</td><td>Shared + all outer edges forced</td></tr>
     <tr><td>3 — Diagonal threes</td><td>Two 3s sharing a vertex</td><td>Non-bordering edges at shared vertex forced</td></tr>
     <tr><td>4 — One loop to rule them all</td><td>Closing edge available</td><td>Eliminated if clues unsatisfied</td></tr>
+    <tr><td>4b — Three sides filled</td><td>Cell with 3 loop edges</td><td>Fourth edge eliminated</td></tr>
     <tr><td>5 — Cascading chevrons</td><td>Two edges at corner of a 2</td><td>Opposite corner edges forced; cascades through diagonal 2s</td></tr>
     <tr><td>6 — Trapped approach on a one</td><td>Line trapped at corner of a 1</td><td>Opposite corner edges eliminated</td></tr>
     <tr><td>7 — Approaching a two</td><td>Line approaches 2-cell with one edge eliminated</td><td>Distant remaining edge forced</td></tr>
+    <tr><td>8 — Conductivity of a three</td><td>Line approaches virgin 3-cell vertex</td><td>Both opposite vertex edges forced</td></tr>
   </table>
 </div>
 
