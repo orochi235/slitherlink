@@ -1,3 +1,5 @@
+const escapeText = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
 class SLDiagram extends HTMLElement {
   static get observedAttributes() {
     return ['size', 'clues', 'lines', 'erased', 'emphasis', 'putative', 'x-marks', 'caption', 'continue', 'extents', 'baseline'];
@@ -14,6 +16,10 @@ class SLDiagram extends HTMLElement {
   static parseSize(s) {
     if (!s) return null;
     const [w, h] = s.toLowerCase().split('x').map(Number);
+    if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1) {
+      console.warn(`sl-diagram: ignoring size "${s}"`);
+      return null;
+    }
     return { w, h };
   }
 
@@ -41,6 +47,11 @@ class SLDiagram extends HTMLElement {
       const coordPart = trimmed.substring(0, arrowIdx).trim();
       const dirPart = trimmed.substring(arrowIdx + 2).trim().toUpperCase();
       const [x, y] = coordPart.split(',').map(Number);
+      // A typo must not draw as a legitimate shorter path, so a bad segment is dropped whole.
+      if (!Number.isInteger(x) || !Number.isInteger(y) || /[^UDLR\s]/.test(dirPart)) {
+        console.warn(`sl-diagram: ignoring path "${trimmed}"`);
+        continue;
+      }
       let cx = x, cy = y;
       for (const ch of dirPart) {
         let nx = cx, ny = cy;
@@ -359,7 +370,7 @@ class SLDiagram extends HTMLElement {
       // Cell center: between vertices (cx-1,cy-1) and (cx,cy)
       const px = (vx(cx - 1) + vx(cx)) / 2;
       const py = (vy(cy - 1) + vy(cy)) / 2;
-      svg += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${fontSize}" font-weight="600" fill="${COL.clue}">${val}</text>`;
+      svg += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${fontSize}" font-weight="600" fill="${COL.clue}">${escapeText(val)}</text>`;
     }
 
     // Fade mask
@@ -450,7 +461,7 @@ class SLDiagram extends HTMLElement {
       : '';
 
     const captionHTML = captionText
-      ? `<div class="caption">${captionText}</div>`
+      ? `<div class="caption">${escapeText(captionText)}</div>`
       : '';
 
     this.shadowRoot.innerHTML = `
@@ -465,7 +476,7 @@ class SLDiagram extends HTMLElement {
   }
 }
 
-customElements.define('sl-diagram', SLDiagram);
+if (!customElements.get('sl-diagram')) customElements.define('sl-diagram', SLDiagram);
 
 class SLSequence extends HTMLElement {
   constructor() {
@@ -543,4 +554,4 @@ class SLSequence extends HTMLElement {
   }
 }
 
-customElements.define('sl-sequence', SLSequence);
+if (!customElements.get('sl-sequence')) customElements.define('sl-sequence', SLSequence);
